@@ -5,24 +5,24 @@ package io.github.bensku.skripty.core;
  *
  */
 public class AstNode {
-
+	
 	/**
-	 * Type of data returned by the expression represented by this node.
+	 * Id of the expression this node represents.
 	 */
-	private final SkriptType returnType;
+	private final int expressionId;
 	
 	/**
 	 * Nodes that expression represented by this node takes as inputs.
 	 */
 	private final AstNode[] inputs;
 	
-	public AstNode(SkriptType returnType, AstNode[] inputs) {
-		this.returnType = returnType;
+	public AstNode(int expressionId, AstNode[] inputs) {
+		this.expressionId = expressionId;
 		this.inputs = inputs;
 	}
 
-	public SkriptType getReturnType() {
-		return returnType;
+	int getExpressionId() {
+		return expressionId;
 	}
 
 	public AstNode[] getInputs() {
