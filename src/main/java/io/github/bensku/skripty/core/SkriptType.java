@@ -6,6 +6,14 @@ package io.github.bensku.skripty.core;
  */
 public interface SkriptType {
 	
+	public static SkriptType.Virtual create(String className) {
+		return new SkriptType.Virtual(className);
+	}
+	
+	public static SkriptType.Concrete create(Class<?> backingClass) {
+		return new SkriptType.Concrete(backingClass);
+	}
+	
 	/**
 	 * Creates a concrete version of this type.
 	 * @return A concrete type.

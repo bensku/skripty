@@ -8,7 +8,7 @@ import io.github.bensku.skripty.core.SkriptType;
  */
 public class ConstantExpression extends Expression {
 	
-	private static final SkriptType[][] EMPTY_INPUTS = new SkriptType[0][];
+	private static final InputType[] EMPTY_INPUTS = new InputType[0];
 
 	/**
 	 * The type of this that is visible to scripts.
@@ -26,13 +26,13 @@ public class ConstantExpression extends Expression {
 	}
 	
 	@Override
-	public Object call(Object[] inputs) {
+	public Object call(Object... inputs) {
 		assert inputs.length == 0 : "constants don't take inputs";
 		return value;
 	}
 
 	@Override
-	public SkriptType[][] getInputTypes() {
+	public InputType[] getInputTypes() {
 		return EMPTY_INPUTS;
 	}
 

@@ -13,14 +13,14 @@ public abstract class Expression {
 	 * @param inputs Inputs for the expression.
 	 * @return Values returned by the expression.
 	 */
-	public abstract Object call(Object[] inputs);
+	public abstract Object call(Object... inputs);
 	
 	/**
 	 * Gets input types that this expression accepts.
-	 * @return Accepted input types. Each input will accept at least one type.
-	 * Length of this array indicates how many inputs are accepted.
+	 * @return Accepted input types. Length of this array indicates how many
+	 * inputs are accepted.
 	 */
-	public abstract SkriptType[][] getInputTypes();
+	public abstract InputType[] getInputTypes();
 	
 	/**
 	 * Gets return type of this expression. When it is called, a value

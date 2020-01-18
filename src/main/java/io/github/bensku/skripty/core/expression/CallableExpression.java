@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.core.expression;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 
 import io.github.bensku.skripty.core.SkriptType;
 
@@ -15,7 +16,7 @@ public class CallableExpression extends Expression {
 	 */
 	private final Object instance;
 
-	private final SkriptType[][] inputTypes;
+	private final InputType[] inputTypes;
 	private final SkriptType returnType;
 	
 	/**
@@ -23,18 +24,21 @@ public class CallableExpression extends Expression {
 	 * match to provided inputs is selected. Failing that, entry points at
 	 * start of this array have higher priority.
 	 */
-	private final CallTarget[] callTargets;
+	private final MethodHandle[] callTargets;
 
-	private CallableExpression(Object instance, SkriptType[][] inputTypes, SkriptType returnType,
-			CallTarget[] callTargets) {
+	public CallableExpression(Object instance, InputType[] inputTypes, SkriptType returnType,
+			MethodHandle[] callTargets) {
 		this.instance = instance;
 		this.inputTypes = inputTypes;
 		this.returnType = returnType;
 		this.callTargets = callTargets;
+		for (int i = 0; i < callTargets.length; i++) {
+			callTargets[i] = callTargets[i].bindTo(instance);
+		}
 	}
 
 	@Override
-	public Object call(Object[] inputs) {
+	public Object call(Object... inputs) {
 		Class<?>[] inputClasses = new Class<?>[inputs.length];
 		for (int i = 0; i < inputClasses.length; i++) {
 			inputClasses[i] = inputs[i].getClass();
@@ -42,14 +46,14 @@ public class CallableExpression extends Expression {
 		MethodHandle target = findTarget(inputClasses, false);
 		assert target != null : "no call targets found";
 		try {
-			return target.bindTo(instance).asSpreader(Object[].class, inputs.length).invoke(inputs);
+			return target.invokeWithArguments(inputs);
 		} catch (Throwable e) {
 			throw new AssertionError(e); // TODO handle this better
 		}
 	}
 
 	@Override
-	public SkriptType[][] getInputTypes() {
+	public InputType[] getInputTypes() {
 		return inputTypes;
 	}
 
@@ -68,11 +72,29 @@ public class CallableExpression extends Expression {
 	 * @return A target method.
 	 */
 	public MethodHandle findTarget(Class<?>[] inputClasses, boolean exact) {
-		for (CallTarget candidate : callTargets) {
-			if (candidate.accepts(inputClasses, exact)) {
-				return candidate.getMethod();
+		for (MethodHandle candidate : callTargets) {
+			if (doParametersMatch(candidate.type(), inputClasses, exact)) {
+				return candidate; // Parameters match
 			}
 		}
 		return null;
+	}
+	
+	private boolean doParametersMatch(MethodType type, Class<?>[] inputClasses, boolean exact) {
+		if (inputClasses.length != type.parameterCount()) {
+			return false; // Wrong number of parameters
+		}
+		for (int i = 0; i < type.parameterCount(); i++) {
+			if (exact) { // Exact match required, check if classes are exactly same
+				if (!type.parameterType(i).equals(inputClasses[i])) {
+					return false;
+				}
+			} else { // Input just needs to be convertible to requested class
+				if (!type.parameterType(i).isAssignableFrom(inputClasses[i])) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 }
