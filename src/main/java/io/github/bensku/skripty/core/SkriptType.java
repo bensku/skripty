@@ -1,4 +1,4 @@
-package io.github.bensku.skript.core;
+package io.github.bensku.skripty.core;
 
 /**
  * A type that is visible to scripts.

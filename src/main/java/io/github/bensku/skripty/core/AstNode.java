@@ -1,4 +1,4 @@
-package io.github.bensku.skript.core;
+package io.github.bensku.skripty.core;
 
 /**
  * An abstract syntax tree node that represents a single expression.
