@@ -21,13 +21,17 @@ public class ExpressionTree {
 		private byte[] bytes;
 		
 		/**
-		 * At this bit, branch to {@link #branch0} or {@link #branch1},
-		 * depending on value of the bit in the matched string.
+		 * A branch happens within this byte.
 		 */
 		private int branchIndex;
 		
 		/**
-		 * Node where to branch to if bit at {@link #branchIndex} is 0.
+		 * The bit we branch on, from branchIndex.
+		 */
+		private int branchBit;
+		
+		/**
+		 * Node where to branch to if bit at {@link #branchBit} is 0.
 		 */
 		private Node branch0;
 		
@@ -48,82 +52,111 @@ public class ExpressionTree {
 			this.branchIndex = -1;
 		}
 		
-		public Node write(int globalIndex, int bytesLeft, byte value) {
-			int index = globalIndex - nodeStart;
-			
-			if (bytes == null) {
-				bytes = new byte[INITIAL_SIZE];
-				bytes[index] = value;
-				return this;
-			} else if (index >= bytes.length) { // Need to enlarge array
-				byte[] newArray = new byte[bytes.length * 2];
-				System.arraycopy(bytes, 0, newArray, 0, bytes.length);
-				bytes = newArray;
-				bytes[index] = value;
-				return this;
-			} else if (bytes[index] == 0) { // NULL, write over it
-				bytes[index] = value;
-				return this;
-			} else if (bytes[index] == value) { // Same value, ignore
-				return this; // Do nothing
-			} else if (branchIndex * 8 == index) { // Must select a branch at this byte
-				Node newNode = selectBranch(index, value);
-				byte fused = (byte) (bytes[index] | newNode.bytes[0]);
-				if (fused == value) {
-					return newNode; // No more branching
-				}
-				// TODO
-			} else { // Need to branch at this point
-				return makeBranch(index, value, bytesLeft);
+		private byte readOrNull(int index) {
+			if (index >= bytes.length) {
+				return 0;
+			} else {
+				return bytes[index];
 			}
 		}
 		
-		private Node selectBranch(int index, byte value) {
-			throw new UnsupportedOperationException();
+		private void writeByte(int index, byte value) {
+			if (index >= bytes.length) {
+				byte[] newBytes = new byte[bytes.length * 2];
+				System.arraycopy(bytes, 0, newBytes, 0, bytes.length);
+				bytes = newBytes;
+			}
+			bytes[index] = value;
 		}
 		
-		private Node makeBranch(int index, byte value, int bytesLeft) {
-			int globalIndex = nodeStart + index;
+		public void write(byte[] data, int start, ExpressionInfo info) {
+			int i;
+			for (i = 0; start + i < data.length; i++) {
+				byte oldValue = readOrNull(i);
+				byte newValue = data[start + i];
+				
+				if (branchIndex == i) { // There is a branch that we need to follow
+					// Select (or rare cases, create) a branch
+					Node newNode = selectBranch(newValue);
+					if (newNode == null) {
+						newNode = createBranch(i, newValue);
+					}
+					newNode.write(data, start + i, info);
+					return; // Assume that write succeeded somewhere down the line
+				}
+				
+				// If we're not changing anything, things are very simple
+				if (oldValue == newValue || oldValue == 0) { // Overwrite NULLs, too
+					writeByte(i, newValue);
+					continue;
+				}
+				
+				// But otherwise we probably have a branch here!
+				createBranch(i, newValue).write(data, start + i, info);
+				return; // Written down the line, hopefully
+			}
 			
-			// Find the first bit which is different
+			// Reached a node and index matching the data
+			addExpr(data.length - 1, info);
+		}
+		
+		/**
+		 * 
+		 * @param value The byte at {@link #branchIndex} that will be used to
+		 * decide which path we branch to.
+		 */
+		public Node selectBranch(byte value) {
+			// Find the first differing bit
+			int diffBit = Integer.numberOfLeadingZeros(bytes[branchIndex] ^ value) - 24;
+			if (diffBit < branchBit) { // Difference BEFORE the branch bit!
+				return null; // Caller might want to create a branch
+			} else { // Just select a branch
+				// Create a mask where this is 1, everything else zero
+				int mismatchMask = 1 << (7 - diffBit);
+				// Check whether our or their bit there is zero
+				boolean ourZero = (mismatchMask & value) == 0;
+				return ourZero ? branch0 : branch1;
+			}
+		}
+		
+		public Node createBranch(int index, byte value) {
+			int globalIndex = nodeStart + index;
 			int bitIndex = Integer.numberOfLeadingZeros(bytes[index] ^ value) - 24;
+			
 			// Create a mask where this is 1, everything else zero
 			int mismatchMask = 1 << (7 - bitIndex);
 			// Check whether our or their bit there is zero
 			boolean ourZero = (mismatchMask & value) == 0;
 			
-			// Create masks for before and after the differing byte
-			int startMask = 0xff << (7 - bitIndex) & 0xff;
-			int endMask = 0xff >>> bitIndex;
-			
 			// Node for existing content
 			Node oldNode = new Node(globalIndex);
-			oldNode.bytes = new byte[bytes.length - index - 1];
-			oldNode.bytes[0] = (byte) (bytes[index] & endMask);
-			if (oldNode.bytes.length > 1) {
-				System.arraycopy(bytes, index + 1, oldNode.bytes, 1, oldNode.bytes.length - 1);
-			}
+			oldNode.bytes = new byte[bytes.length - index];
+			System.arraycopy(bytes, index, oldNode.bytes, 0, oldNode.bytes.length);
 			if (branchIndex != -1) { // There is another branch after this one
-				oldNode.branchIndex = branchIndex - index * 8;
+				oldNode.branchIndex = branchIndex - index;
+				oldNode.branchBit = branchBit;
 			}
 			oldNode.branch0 = branch0;
 			oldNode.branch1 = branch1;
 			
 			// Copy expressions to that node if needed
 			ExpressionEntry firstToCopy = lastExpr;
-			while (firstToCopy.index >= globalIndex && firstToCopy.before != null) {
-				firstToCopy = firstToCopy.before;
+			if (firstToCopy != null) {
+				while (firstToCopy.index >= globalIndex && firstToCopy.before != null) {
+					firstToCopy = firstToCopy.before;
+				}
+				oldNode.firstExpr = firstToCopy;
+				oldNode.lastExpr = lastExpr;
 			}
-			oldNode.firstExpr = firstToCopy;
-			oldNode.lastExpr = lastExpr;
 			
 			// New node for new content
 			Node newNode = new Node(globalIndex);
-			newNode.bytes = new byte[bytesLeft];
-			newNode.bytes[0] = (byte) (value & endMask);
+			newNode.bytes = new byte[INITIAL_SIZE]; // TODO we know total length, optimize this
+			// Not writing first byte here; caller is responsible for that
 			
 			// Update this node
-			branchIndex = index * 8 + bitIndex;
+			branchIndex = index; // There is a branch, now
+			branchBit = bitIndex;
 			if (ourZero) { // Old to branch1, new to branch0
 				branch1 = oldNode;
 				branch0 = newNode;
@@ -131,11 +164,11 @@ public class ExpressionTree {
 				branch0 = oldNode;
 				branch1 = newNode;
 			}
-			lastExpr = firstToCopy.before;
-			firstToCopy.before = null; // It is in new node now, won't need that
 			
-			// Set this byte to bits that are same + zeroes to end
-			bytes[index] &= startMask;
+			if (firstToCopy != null) {
+				lastExpr = firstToCopy.before;
+				firstToCopy.before = null; // It is in new node now, won't need that
+			}
 			
 			return newNode;
 		}
@@ -200,13 +233,10 @@ public class ExpressionTree {
 	
 	public ExpressionTree() {
 		this.root = new Node(0);
+		root.bytes = new byte[Node.INITIAL_SIZE];
 	}
 	
 	public void put(byte[] pattern, ExpressionInfo expr) {
-		Node node = root;
-		for (int i = 0; i < pattern.length; i++) {
-			node = node.write(i, pattern.length - i, pattern[i]);
-		}
-		node.addExpr(pattern.length - 1, expr);
+		root.write(pattern, 0, expr);
 	}
 }
