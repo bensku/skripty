@@ -22,3 +22,9 @@ allprojects {
 		useJUnitPlatform()
 	}
 }
+
+subprojects {
+	dependencies {
+		compile rootProject
+	}
+}

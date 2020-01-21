@@ -22,7 +22,7 @@ public class ExpressionInfo {
 	 */
 	private final int expressionId;
 
-	private ExpressionInfo(Pattern pattern, int expressionId) {
+	public ExpressionInfo(Pattern pattern, int expressionId) {
 		this.pattern = pattern;
 		this.expressionId = expressionId;
 	}
