@@ -135,14 +135,14 @@ public class RadixTree<T> {
 				byte value = key[start + i];
 				if (i >= bytes.length) {
 					break; // Ran out of things in this node
-				}else if (branchIndex == i) { // Need to select a branch
+				} else if (branchIndex == i) { // Need to select a branch
 					Node<T> branch = selectBranch(value);
 					if (branch != null) { // If there is a suitable branch, go for it
 						branch.read(dataOut, key, start + i);
 					}
 					break;
 				} else if (bytes[i] != value) {
-					break; // No branch and value doesn't match -> we're out
+					break; // No branch and values don't match -> we're out
 				}
 				
 				// Nothing interrupted us? Check if we found an expression
@@ -166,8 +166,8 @@ public class RadixTree<T> {
 			if (diffBit < branchBit) { // Difference BEFORE the branch bit!
 				return null; // Caller might want to create a branch
 			} else { // Just select a branch
-				// Create a mask where this is 1, everything else zero
-				int mismatchMask = 1 << (7 - diffBit);
+				// Create a mask where branch bit is 1, everything else zero
+				int mismatchMask = 1 << (7 - branchBit);
 				// Check whether our or their bit there is zero
 				boolean ourZero = (mismatchMask & value) == 0;
 				return ourZero ? branch0 : branch1;
@@ -225,6 +225,7 @@ public class RadixTree<T> {
 				branch0 = oldNode;
 				branch1 = newNode;
 			}
+			bytes[index] = value;
 			
 			if (firstToCopy != null) {
 				lastExpr = firstToCopy.before;
@@ -267,6 +268,10 @@ public class RadixTree<T> {
 		}
 	}
 	
+	/**
+	 * Represents a data entry in the tree. Data entries that share a node are
+	 * double linked together in order.
+	 */
 	private static class DataEntry<T> {
 		
 		/**
