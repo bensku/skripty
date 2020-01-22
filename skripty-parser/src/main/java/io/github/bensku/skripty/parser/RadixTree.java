@@ -9,9 +9,9 @@ import java.util.function.Consumer;
  * A radix tree used for expression lookups. Operates on UTF-8 string data.
  *
  */
-public class ExpressionTree {
+public class RadixTree<T> {
 
-	private static class Node {
+	private static class Node<T> {
 		
 		private static final int INITIAL_SIZE = 4;
 		
@@ -26,32 +26,40 @@ public class ExpressionTree {
 		private byte[] bytes;
 		
 		/**
-		 * A branch happens within this byte.
+		 * An index of the byte that contains branch of this node. If there
+		 * are no branches, this is -1.
 		 */
 		private int branchIndex;
 		
 		/**
-		 * The bit we branch on, from branchIndex.
+		 * The bit we branch on, in byte at {@link #branchIndex}.
 		 */
 		private int branchBit;
 		
 		/**
-		 * Node where to branch to if bit at {@link #branchBit} is 0.
+		 * Node to branch to if bit at {@link #branchBit} is 0.
 		 */
-		private Node branch0;
+		private Node<T> branch0;
 		
-		private Node branch1;
+		/**
+		 * Node to branch to if branch bit is 1.
+		 */
+		private Node<T> branch1;
 		
 		/**
 		 * The first expression in this node.
 		 */
-		private ExpressionEntry firstExpr;
+		private DataEntry<T> firstExpr;
 		
 		/**
 		 * The last expression in this node.
 		 */
-		private ExpressionEntry lastExpr;
+		private DataEntry<T> lastExpr;
 		
+		/**
+		 * Creates a new node.
+		 * @param nodeStart Global start index for the node.
+		 */
 		public Node(int nodeStart) {
 			this.nodeStart = nodeStart;
 			this.branchIndex = -1;
@@ -85,12 +93,12 @@ public class ExpressionTree {
 		}
 		
 		/**
-		 * Writes the given expression at node at end of given data.
+		 * Writes given data at a node at end of given key.
 		 * @param key Key for expression.
 		 * @param start Start in data array.
-		 * @param info Expression info to write.
+		 * @param data Data to write.
 		 */
-		public void write(byte[] key, int start, ExpressionInfo info) {
+		public void write(byte[] key, int start, T data) {
 			int i;
 			for (i = 0; start + i < key.length; i++) {
 				byte oldValue = readByte(i);
@@ -98,11 +106,11 @@ public class ExpressionTree {
 				
 				if (branchIndex == i) { // There is a branch that we need to follow
 					// Select (or rare cases, create) a branch
-					Node newNode = selectBranch(newValue);
+					Node<T> newNode = selectBranch(newValue);
 					if (newNode == null) {
 						newNode = createBranch(i, newValue);
 					}
-					newNode.write(key, start + i, info);
+					newNode.write(key, start + i, data);
 					return; // Assume that write succeeded somewhere down the line
 				}
 				
@@ -113,24 +121,24 @@ public class ExpressionTree {
 				}
 				
 				// But otherwise we probably have a branch here!
-				createBranch(i, newValue).write(key, start + i, info);
+				createBranch(i, newValue).write(key, start + i, data);
 				return; // Written down the line, hopefully
 			}
 			
 			// Reached a node and index matching the data
-			addExpr(key.length - 1, info);
+			addData(key.length - 1, data);
 		}
 		
-		public void read(Consumer<ExpressionInfo> exprOut, byte[] key, int start) {
-			ExpressionEntry currentExpr = firstExpr;
+		public void read(Consumer<T> dataOut, byte[] key, int start) {
+			DataEntry<T> currentExpr = firstExpr;
 			for (int i = 0; start + i < key.length; i++) {
 				byte value = key[start + i];
 				if (i >= bytes.length) {
 					break; // Ran out of things in this node
 				}else if (branchIndex == i) { // Need to select a branch
-					Node branch = selectBranch(value);
+					Node<T> branch = selectBranch(value);
 					if (branch != null) { // If there is a suitable branch, go for it
-						branch.read(exprOut, key, start + i);
+						branch.read(dataOut, key, start + i);
 					}
 					break;
 				} else if (bytes[i] != value) {
@@ -139,7 +147,7 @@ public class ExpressionTree {
 				
 				// Nothing interrupted us? Check if we found an expression
 				if (currentExpr != null && currentExpr.index == nodeStart + i) {
-					exprOut.accept(currentExpr.info);
+					dataOut.accept(currentExpr.data);
 					currentExpr = currentExpr.after; // Next (maybe null, that's ok)
 				}
 			}
@@ -152,7 +160,7 @@ public class ExpressionTree {
 		 * @return Correct branch, or null if there is a difference before
 		 * the existing branch.
 		 */
-		public Node selectBranch(byte value) {
+		public Node<T> selectBranch(byte value) {
 			// Find the first differing bit
 			int diffBit = Integer.numberOfLeadingZeros(bytes[branchIndex] ^ value) - 24;
 			if (diffBit < branchBit) { // Difference BEFORE the branch bit!
@@ -172,7 +180,7 @@ public class ExpressionTree {
 		 * @param value New value for byte that makes the branch necessary.
 		 * @return The new branch.
 		 */
-		public Node createBranch(int index, byte value) {
+		public Node<T> createBranch(int index, byte value) {
 			int globalIndex = nodeStart + index;
 			int bitIndex = Integer.numberOfLeadingZeros(bytes[index] ^ value) - 24;
 			
@@ -182,7 +190,7 @@ public class ExpressionTree {
 			boolean ourZero = (mismatchMask & value) == 0;
 			
 			// Node for existing content
-			Node oldNode = new Node(globalIndex);
+			Node<T> oldNode = new Node<>(globalIndex);
 			oldNode.bytes = new byte[bytes.length - index];
 			System.arraycopy(bytes, index, oldNode.bytes, 0, oldNode.bytes.length);
 			if (branchIndex != -1) { // There is another branch after this one
@@ -193,7 +201,7 @@ public class ExpressionTree {
 			oldNode.branch1 = branch1;
 			
 			// Copy expressions to that node if needed
-			ExpressionEntry firstToCopy = lastExpr;
+			DataEntry<T> firstToCopy = lastExpr;
 			if (firstToCopy != null) {
 				while (firstToCopy.index >= globalIndex && firstToCopy.before != null) {
 					firstToCopy = firstToCopy.before;
@@ -203,7 +211,7 @@ public class ExpressionTree {
 			}
 			
 			// New node for new content
-			Node newNode = new Node(globalIndex);
+			Node<T> newNode = new Node<>(globalIndex);
 			newNode.bytes = new byte[INITIAL_SIZE]; // TODO we know total length, optimize this
 			// Not writing first byte here; caller is responsible for that
 			
@@ -227,17 +235,17 @@ public class ExpressionTree {
 		}
 		
 		/**
-		 * Adds an expression to this node.
+		 * Adds a data value to this node.
 		 * @param globalIndex Global (byte) index for the expression.
-		 * @param info Expression information.
+		 * @param data Data value.
 		 */
-		public void addExpr(int globalIndex, ExpressionInfo info) {
-			ExpressionEntry entry = new ExpressionEntry(globalIndex, info);
+		public void addData(int globalIndex, T data) {
+			DataEntry<T> entry = new DataEntry<>(globalIndex, data);
 			if (firstExpr == null) { // First and last expression here
 				firstExpr = entry;
 				lastExpr = entry;
 			} else { // Link to some other expression
-				ExpressionEntry before = firstExpr;
+				DataEntry<T> before = firstExpr;
 				// Go forward to find expression before this one
 				while (before.index < globalIndex && before.after != null) {
 					before = before.after;
@@ -251,7 +259,7 @@ public class ExpressionTree {
 				}
 				
 				// Place ourself between before and after
-				ExpressionEntry after = before.after;
+				DataEntry<T> after = before.after;
 				before.after = entry;
 				entry.before = before;
 				entry.after = after;
@@ -259,7 +267,7 @@ public class ExpressionTree {
 		}
 	}
 	
-	private static class ExpressionEntry {
+	private static class DataEntry<T> {
 		
 		/**
 		 * Index of byte where this appears.
@@ -267,52 +275,77 @@ public class ExpressionTree {
 		private final int index;
 		
 		/**
-		 * Expression information for the parser.
+		 * Data this entry is associated with.
 		 */
-		private final ExpressionInfo info;
+		private final T data;
 		
 		/**
 		 * The entry before this one. May be null.
 		 */
-		private ExpressionEntry before;
+		private DataEntry<T> before;
 		
 		/**
 		 * The entry after this one. May be null.
 		 */
-		private ExpressionEntry after;
+		private DataEntry<T> after;
 		
-		public ExpressionEntry(int index, ExpressionInfo info) {
+		public DataEntry(int index, T data) {
 			this.index = index;
-			this.info = info;
+			this.data = data;
 		}
 	}
 	
-	private final Node root;
+	private final Node<T> root;
 	
-	public ExpressionTree() {
-		this.root = new Node(0);
+	public RadixTree() {
+		this.root = new Node<>(0);
 		root.bytes = new byte[Node.INITIAL_SIZE];
 	}
 	
-	public void put(byte[] pattern, ExpressionInfo expr) {
-		root.write(pattern, 0, expr);
+	/**
+	 * Puts data to this tree.
+	 * @param key Key for the data.
+	 * @param data The data.
+	 */
+	public void put(byte[] key, T data) {
+		root.write(key, 0, data);
 	}
 	
-	public void put(String pattern, ExpressionInfo expr) {
-		put(pattern.getBytes(StandardCharsets.UTF_8), expr);
+	/**
+	 * Puts data to this tree.
+	 * @param key Key for the data.
+	 * @param data The data.
+	 */
+	public void put(String key, T data) {
+		put(key.getBytes(StandardCharsets.UTF_8), data);
 	}
 	
-	public void get(byte[] pattern, Consumer<ExpressionInfo> exprOut) {
-		root.read(exprOut, pattern, 0);
+	/**
+	 * Gets all data that is the given key or prefix of it.
+	 * @param key Key for the data.
+	 * @param dataOut A function that receives data that is found.
+	 */
+	public void get(byte[] key, Consumer<T> dataOut) {
+		root.read(dataOut, key, 0);
 	}
 	
-	public List<ExpressionInfo> get(byte[] pattern) {
-		List<ExpressionInfo> exprs = new ArrayList<>();
-		get(pattern, exprs::add);
-		return exprs;
+	/**
+	 * Gets all data that is the given key or prefix of it.
+	 * @param key Key for the data.
+	 * @return List of data that is found.
+	 */
+	public List<T> get(byte[] key) {
+		List<T> datas = new ArrayList<>();
+		get(key, datas::add);
+		return datas;
 	}
 	
-	public List<ExpressionInfo> get(String pattern) {
-		return get(pattern.getBytes(StandardCharsets.UTF_8));
+	/**
+	 * Gets all data that is the given key or prefix of it.
+	 * @param key Key for the data.
+	 * @return List of data that is found.
+	 */
+	public List<T> get(String key) {
+		return get(key.getBytes(StandardCharsets.UTF_8));
 	}
 }
