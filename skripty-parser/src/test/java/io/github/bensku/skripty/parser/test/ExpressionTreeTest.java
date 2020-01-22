@@ -1,5 +1,7 @@
 package io.github.bensku.skripty.parser.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +17,8 @@ public class ExpressionTreeTest {
 	
 	@Test
 	public void simplePut() {
-		tree.put("abc".getBytes(StandardCharsets.UTF_8), null);
+		tree.put("abc", null);
+		assertEquals(null, tree.get("abc").get(0));
 	}
 	
 	@Test

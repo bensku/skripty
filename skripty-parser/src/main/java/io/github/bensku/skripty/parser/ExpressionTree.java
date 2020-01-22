@@ -1,5 +1,10 @@
 package io.github.bensku.skripty.parser;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * A radix tree used for expression lookups. Operates on UTF-8 string data.
  *
@@ -52,7 +57,12 @@ public class ExpressionTree {
 			this.branchIndex = -1;
 		}
 		
-		private byte readOrNull(int index) {
+		/**
+		 * Reads a byte from this node.
+		 * @param index Index.
+		 * @return The byte, or 0 if index is too large.
+		 */
+		private byte readByte(int index) {
 			if (index >= bytes.length) {
 				return 0;
 			} else {
@@ -60,6 +70,11 @@ public class ExpressionTree {
 			}
 		}
 		
+		/**
+		 * Writes a byte to this node. Enlarges {@link #bytes} if needed.
+		 * @param index Index.
+		 * @param value New value for byte at index.
+		 */
 		private void writeByte(int index, byte value) {
 			if (index >= bytes.length) {
 				byte[] newBytes = new byte[bytes.length * 2];
@@ -69,11 +84,17 @@ public class ExpressionTree {
 			bytes[index] = value;
 		}
 		
-		public void write(byte[] data, int start, ExpressionInfo info) {
+		/**
+		 * Writes the given expression at node at end of given data.
+		 * @param key Key for expression.
+		 * @param start Start in data array.
+		 * @param info Expression info to write.
+		 */
+		public void write(byte[] key, int start, ExpressionInfo info) {
 			int i;
-			for (i = 0; start + i < data.length; i++) {
-				byte oldValue = readOrNull(i);
-				byte newValue = data[start + i];
+			for (i = 0; start + i < key.length; i++) {
+				byte oldValue = readByte(i);
+				byte newValue = key[start + i];
 				
 				if (branchIndex == i) { // There is a branch that we need to follow
 					// Select (or rare cases, create) a branch
@@ -81,7 +102,7 @@ public class ExpressionTree {
 					if (newNode == null) {
 						newNode = createBranch(i, newValue);
 					}
-					newNode.write(data, start + i, info);
+					newNode.write(key, start + i, info);
 					return; // Assume that write succeeded somewhere down the line
 				}
 				
@@ -92,18 +113,44 @@ public class ExpressionTree {
 				}
 				
 				// But otherwise we probably have a branch here!
-				createBranch(i, newValue).write(data, start + i, info);
+				createBranch(i, newValue).write(key, start + i, info);
 				return; // Written down the line, hopefully
 			}
 			
 			// Reached a node and index matching the data
-			addExpr(data.length - 1, info);
+			addExpr(key.length - 1, info);
+		}
+		
+		public void read(Consumer<ExpressionInfo> exprOut, byte[] key, int start) {
+			ExpressionEntry currentExpr = firstExpr;
+			for (int i = 0; start + i < key.length; i++) {
+				byte value = key[start + i];
+				if (i >= bytes.length) {
+					break; // Ran out of things in this node
+				}else if (branchIndex == i) { // Need to select a branch
+					Node branch = selectBranch(value);
+					if (branch != null) { // If there is a suitable branch, go for it
+						branch.read(exprOut, key, start + i);
+					}
+					break;
+				} else if (bytes[i] != value) {
+					break; // No branch and value doesn't match -> we're out
+				}
+				
+				// Nothing interrupted us? Check if we found an expression
+				if (currentExpr != null && currentExpr.index == nodeStart + i) {
+					exprOut.accept(currentExpr.info);
+					currentExpr = currentExpr.after; // Next (maybe null, that's ok)
+				}
+			}
 		}
 		
 		/**
-		 * 
+		 * Selects a branch based on given value for byte at it.
 		 * @param value The byte at {@link #branchIndex} that will be used to
 		 * decide which path we branch to.
+		 * @return Correct branch, or null if there is a difference before
+		 * the existing branch.
 		 */
 		public Node selectBranch(byte value) {
 			// Find the first differing bit
@@ -119,6 +166,12 @@ public class ExpressionTree {
 			}
 		}
 		
+		/**
+		 * Creates a new branch.
+		 * @param index Byte where to make the branch.
+		 * @param value New value for byte that makes the branch necessary.
+		 * @return The new branch.
+		 */
 		public Node createBranch(int index, byte value) {
 			int globalIndex = nodeStart + index;
 			int bitIndex = Integer.numberOfLeadingZeros(bytes[index] ^ value) - 24;
@@ -173,6 +226,11 @@ public class ExpressionTree {
 			return newNode;
 		}
 		
+		/**
+		 * Adds an expression to this node.
+		 * @param globalIndex Global (byte) index for the expression.
+		 * @param info Expression information.
+		 */
 		public void addExpr(int globalIndex, ExpressionInfo info) {
 			ExpressionEntry entry = new ExpressionEntry(globalIndex, info);
 			if (firstExpr == null) { // First and last expression here
@@ -238,5 +296,23 @@ public class ExpressionTree {
 	
 	public void put(byte[] pattern, ExpressionInfo expr) {
 		root.write(pattern, 0, expr);
+	}
+	
+	public void put(String pattern, ExpressionInfo expr) {
+		put(pattern.getBytes(StandardCharsets.UTF_8), expr);
+	}
+	
+	public void get(byte[] pattern, Consumer<ExpressionInfo> exprOut) {
+		root.read(exprOut, pattern, 0);
+	}
+	
+	public List<ExpressionInfo> get(byte[] pattern) {
+		List<ExpressionInfo> exprs = new ArrayList<>();
+		get(pattern, exprs::add);
+		return exprs;
+	}
+	
+	public List<ExpressionInfo> get(String pattern) {
+		return get(pattern.getBytes(StandardCharsets.UTF_8));
 	}
 }
