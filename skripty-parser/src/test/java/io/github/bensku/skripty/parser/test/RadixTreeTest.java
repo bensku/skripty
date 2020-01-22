@@ -1,10 +1,6 @@
 package io.github.bensku.skripty.parser.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -27,11 +23,11 @@ public class RadixTreeTest {
 	@Test
 	public void simpleBranch() {
 		Object marker1 = new Object();
-		tree.put("alpha beta".getBytes(StandardCharsets.UTF_8), marker1);
+		tree.put("alpha beta", marker1);
 		assertEquals(marker1, tree.get("alpha beta").get(0));
 		
 		Object marker2 = new Object();
-		tree.put("alpha gamma".getBytes(StandardCharsets.UTF_8), marker2);
+		tree.put("alpha gamma", marker2);
 		assertEquals(marker2, tree.get("alpha gamma abcdefg").get(0));
 		assertEquals(marker1, tree.get("alpha beta 12345").get(0));
 	}
