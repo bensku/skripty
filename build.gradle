@@ -4,6 +4,7 @@ plugins {
 
 allprojects {
 	apply plugin: 'java'
+	apply plugin: 'jacoco'
 	apply plugin: 'me.champeau.gradle.jmh'
 
 	sourceCompatibility = 11
@@ -20,6 +21,13 @@ allprojects {
 
 	test {
 		useJUnitPlatform()
+	}
+	
+	jacocoTestReport {
+		reports {
+			xml.enabled true
+			html.enabled true
+		}
 	}
 }
 
