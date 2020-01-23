@@ -20,4 +20,4 @@ jobs:
     - name: Upload to Codecov
       uses: codecov/codecov-action@v1.0.5
       with:
-        ktoken: ${{ secrets.CODECOV_TOKEN }} #required
+        token: ${{ secrets.CODECOV_TOKEN }}
