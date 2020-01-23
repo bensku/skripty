@@ -206,6 +206,12 @@ public class RadixTree<T> {
 				while (firstToCopy.index >= globalIndex && firstToCopy.before != null) {
 					firstToCopy = firstToCopy.before;
 				}
+				
+				// Check if we went too far and go back forwards
+				if (firstToCopy.index < globalIndex) {
+					firstToCopy = firstToCopy.after;
+				}
+				
 				oldNode.firstExpr = firstToCopy;
 				oldNode.lastExpr = lastExpr;
 			}
@@ -228,6 +234,9 @@ public class RadixTree<T> {
 			bytes[index] = value;
 			
 			if (firstToCopy != null) {
+				if (firstExpr == lastExpr) {
+					firstExpr = null;
+				}
 				lastExpr = firstToCopy.before;
 				firstToCopy.before = null; // It is in new node now, won't need that
 			}

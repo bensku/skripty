@@ -1,6 +1,9 @@
 package io.github.bensku.skripty.parser.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -48,5 +51,27 @@ public class RadixTreeTest {
 		assertEquals(marker1, tree.get("alpha").get(0));
 		assertEquals(marker2, tree.get("beta").get(0));
 		assertEquals(marker3, tree.get("gamma").get(0));
+	}
+	
+	@Test
+	public void manyValues() {
+		Object marker1 = new Object();
+		tree.put("alpha", marker1);
+		Object marker2 = new Object();
+		tree.put("alpha beta", marker2);
+		Object marker3 = new Object();
+		tree.put("alpha beta gamma", marker3);
+		
+		List<Object> results = tree.get("alpha beta gamma");
+		assertTrue(results.contains(marker1));
+		assertTrue(results.contains(marker2));
+		assertTrue(results.contains(marker3));
+		
+		Object marker4 = new Object();
+		tree.put("alpha gamma", marker4);
+		List<Object> results2 = tree.get("alpha gamma");
+		assertTrue(results2.contains(marker1));
+		assertTrue(results2.contains(marker4));
+		assertEquals(results, tree.get("alpha beta gamma"));
 	}
 }
