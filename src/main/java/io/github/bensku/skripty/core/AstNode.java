@@ -1,5 +1,7 @@
 package io.github.bensku.skripty.core;
 
+import io.github.bensku.skripty.core.expression.Expression;
+
 /**
  * An abstract syntax tree node that represents a single expression.
  *
@@ -7,22 +9,22 @@ package io.github.bensku.skripty.core;
 public class AstNode {
 	
 	/**
-	 * Id of the expression this node represents.
+	 * Expression that this node represents
 	 */
-	private final int expressionId;
+	private final Expression expression;
 	
 	/**
 	 * Nodes that expression represented by this node takes as inputs.
 	 */
 	private final AstNode[] inputs;
 	
-	public AstNode(int expressionId, AstNode[] inputs) {
-		this.expressionId = expressionId;
+	public AstNode(Expression expression, AstNode[] inputs) {
+		this.expression = expression;
 		this.inputs = inputs;
 	}
 
-	int getExpressionId() {
-		return expressionId;
+	public Expression getExpression() {
+		return expression;
 	}
 
 	public AstNode[] getInputs() {

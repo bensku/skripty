@@ -7,20 +7,20 @@ import io.github.bensku.skripty.core.SkriptType;
  *
  */
 public class InputType {
-
-	/**
-	 * Types we're accepting, in order of preference.
-	 */
-	private final SkriptType[] types;
 	
 	/**
 	 * If the type can be omitted.
 	 */
 	private final boolean optional;
+	
+	/**
+	 * Types we're accepting, in order of preference.
+	 */
+	private final SkriptType[] types;
 
-	public InputType(SkriptType[] types, boolean optional) {
-		this.types = types;
+	public InputType(boolean optional, SkriptType... types) {
 		this.optional = optional;
+		this.types = types;
 	}
 
 	public SkriptType[] getTypes() {

@@ -20,7 +20,8 @@ public class ConstantExpression extends Expression {
 	 */
 	private final Object value;
 	
-	public ConstantExpression(SkriptType type, Object value) {
+	ConstantExpression(int id, SkriptType type, Object value) {
+		super(id);
 		this.type = type;
 		this.value = value;
 	}

@@ -1,7 +1,8 @@
 package io.github.bensku.skripty.parser.pattern;
 
+import java.nio.charset.StandardCharsets;
+
 import io.github.bensku.skripty.core.SkriptType;
-import io.github.bensku.skripty.core.expression.Expression;
 
 public interface PatternPart {
 
@@ -12,15 +13,15 @@ public interface PatternPart {
 	public static class Literal {
 		
 		/**
-		 * Text that must be matched.
+		 * UTF-8 bytes of text that this literal part matches.
 		 */
-		private final String text;
+		private final byte[] text;
 
 		Literal(String text) {
-			this.text = text;
+			this.text = text.getBytes(StandardCharsets.UTF_8);
 		}
 
-		public String getText() {
+		public byte[] getText() {
 			return text;
 		}
 		

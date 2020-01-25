@@ -7,6 +7,19 @@ import io.github.bensku.skripty.core.SkriptType;
  *
  */
 public abstract class Expression {
+	
+	/**
+	 * Id of this expression.
+	 */
+	private final int id;
+	
+	protected Expression(int id) {
+		this.id = id;
+	}
+	
+	public int getId() {
+		return id;
+	}
 
 	/**
 	 * Calls the expression with given inputs.

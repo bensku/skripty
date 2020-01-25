@@ -10,13 +10,53 @@ import io.github.bensku.skripty.core.SkriptType;
  *
  */
 public class CallableExpression extends Expression {
+	
+	public static class Builder {
+		
+		private final ExpressionRegistry registry;
+		private final int id;
+		private final Object instance;
+		
+		private InputType[] inputTypes;
+		private SkriptType returnType;
+		private MethodHandle[] callTargets;
+		
+		Builder(ExpressionRegistry registry, int id, Object instance) {
+			this.registry = registry;
+			this.id = id;
+			this.instance = instance;
+		}
+		
+		public Builder inputTypes(InputType... inputTypes) {
+			this.inputTypes = inputTypes;
+			return this;
+		}
+		
+		public Builder returnType(SkriptType returnType) {
+			this.returnType = returnType;
+			return this;
+		}
+		
+		public Builder callTargets(MethodHandle... callTargets) {
+			this.callTargets = callTargets;
+			return this;
+		}
+		
+		public CallableExpression create() {
+			CallableExpression expr = new CallableExpression(id, instance, inputTypes, returnType, callTargets);
+			registry.addExpression(expr);
+			return expr;
+		}
+	}
 
 	/**
-	 * Instance of the expression implementation.
+	 * Types of the inputs that this expression takes.
 	 */
-	private final Object instance;
-
 	private final InputType[] inputTypes;
+	
+	/**
+	 * Type of data that this expression returns.
+	 */
 	private final SkriptType returnType;
 	
 	/**
@@ -26,9 +66,9 @@ public class CallableExpression extends Expression {
 	 */
 	private final MethodHandle[] callTargets;
 
-	public CallableExpression(Object instance, InputType[] inputTypes, SkriptType returnType,
+	private CallableExpression(int id, Object instance, InputType[] inputTypes, SkriptType returnType,
 			MethodHandle[] callTargets) {
-		this.instance = instance;
+		super(id);
 		this.inputTypes = inputTypes;
 		this.returnType = returnType;
 		this.callTargets = callTargets;
