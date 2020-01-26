@@ -1,5 +1,7 @@
 package io.github.bensku.skripty.parser;
 
+import java.util.Collection;
+
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
@@ -35,8 +37,8 @@ public class ExpressionLayer {
 	 * @param pattern Pattern that can be used for it.
 	 */
 	public void register(Expression expression, Pattern pattern) {
-		PatternPart first = pattern.get(0);
-		PatternPart second = pattern.get(1);
+		PatternPart first = pattern.partAt(0);
+		PatternPart second = pattern.partAt(1);
 		
 		ExpressionInfo info = new ExpressionInfo(pattern, expression);
 		if (first instanceof PatternPart.Literal) {
@@ -45,5 +47,13 @@ public class ExpressionLayer {
 			assert second instanceof PatternPart.Literal : "first or second should be literal";
 			bySecondPart.put(((PatternPart.Literal) second).getText(), info);
 		}
+	}
+	
+	public Collection<ExpressionInfo> lookupFirst(byte[] input, int start) {
+		return byFirstPart.get(input, start);
+	}
+	
+	public Collection<ExpressionInfo> lookupSecond(byte[] input, int start) {
+		return bySecondPart.get(input, start);
 	}
 }

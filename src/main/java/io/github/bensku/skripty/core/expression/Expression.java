@@ -35,10 +35,15 @@ public abstract class Expression {
 	 */
 	public abstract InputType[] getInputTypes();
 	
+	public int getInputCount() {
+		return getInputTypes().length;
+	}
+	
 	/**
 	 * Gets return type of this expression. When it is called, a value
 	 * of this type is returned.
 	 * @return Return type.
 	 */
 	public abstract SkriptType getReturnType();
+
 }

@@ -2,8 +2,8 @@ package io.github.bensku.skripty.parser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * A radix tree used for expression lookups. Operates on UTF-8 string data.
@@ -363,9 +363,9 @@ public class RadixTree<T> {
 	 * @param key Key for the data.
 	 * @return List of data that is found.
 	 */
-	public List<T> get(byte[] key) {
+	public Collection<T> get(byte[] key, int start) {
 		List<T> datas = new ArrayList<>();
-		get(key, 0, (data, end) -> datas.add(data));
+		get(key, start, (data, end) -> datas.add(data));
 		return datas;
 	}
 	
@@ -374,7 +374,7 @@ public class RadixTree<T> {
 	 * @param key Key for the data.
 	 * @return List of data that is found.
 	 */
-	public List<T> get(String key) {
-		return get(key.getBytes(StandardCharsets.UTF_8));
+	public Collection<T> get(String key) {
+		return get(key.getBytes(StandardCharsets.UTF_8), 0);
 	}
 }

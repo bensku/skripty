@@ -49,12 +49,16 @@ public class Pattern {
 		this.parts = parts;
 	}
 	
+	public int length() {
+		return parts.length;
+	}
+	
 	/**
 	 * Gets a pattern part.
 	 * @param index Index of the part.
 	 * @return The part.
 	 */
-	public PatternPart get(int index) {
+	public PatternPart partAt(int index) {
 		return parts[index];
 	}
 }

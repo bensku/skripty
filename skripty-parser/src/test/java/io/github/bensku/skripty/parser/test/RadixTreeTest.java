@@ -20,19 +20,19 @@ public class RadixTreeTest {
 	public void noBranches() {
 		Object marker = new Object();
 		tree.put("abc", marker);
-		assertEquals(marker, tree.get("abc").get(0));
+		assertEquals(marker, tree.get("abc").partAt(0));
 	}
 	
 	@Test
 	public void simpleBranch() {
 		Object marker1 = new Object();
 		tree.put("alpha beta", marker1);
-		assertEquals(marker1, tree.get("alpha beta").get(0));
+		assertEquals(marker1, tree.get("alpha beta").partAt(0));
 		
 		Object marker2 = new Object();
 		tree.put("alpha gamma", marker2);
-		assertEquals(marker2, tree.get("alpha gamma abcdefg").get(0));
-		assertEquals(marker1, tree.get("alpha beta 12345").get(0));
+		assertEquals(marker2, tree.get("alpha gamma abcdefg").partAt(0));
+		assertEquals(marker1, tree.get("alpha beta 12345").partAt(0));
 	}
 	
 	@Test
@@ -42,15 +42,15 @@ public class RadixTreeTest {
 		
 		Object marker2 = new Object();
 		tree.put("beta", marker2);
-		assertEquals(marker1, tree.get("alpha").get(0));
-		assertEquals(marker2, tree.get("beta").get(0));
+		assertEquals(marker1, tree.get("alpha").partAt(0));
+		assertEquals(marker2, tree.get("beta").partAt(0));
 		
 		Object marker3 = new Object();
 		tree.put("gamma", marker3);
 		
-		assertEquals(marker1, tree.get("alpha").get(0));
-		assertEquals(marker2, tree.get("beta").get(0));
-		assertEquals(marker3, tree.get("gamma").get(0));
+		assertEquals(marker1, tree.get("alpha").partAt(0));
+		assertEquals(marker2, tree.get("beta").partAt(0));
+		assertEquals(marker3, tree.get("gamma").partAt(0));
 	}
 	
 	@Test
