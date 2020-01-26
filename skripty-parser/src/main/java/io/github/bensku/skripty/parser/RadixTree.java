@@ -47,14 +47,14 @@ public class RadixTree<T> {
 		private Node<T> branch1;
 		
 		/**
-		 * The first expression in this node.
+		 * The first data entry in this node.
 		 */
-		private DataEntry<T> firstExpr;
+		private DataEntry<T> firstEntry;
 		
 		/**
-		 * The last expression in this node.
+		 * The last data entry in this node.
 		 */
-		private DataEntry<T> lastExpr;
+		private DataEntry<T> lastEntry;
 		
 		/**
 		 * Creates a new node.
@@ -129,8 +129,8 @@ public class RadixTree<T> {
 			addData(key.length - 1, data);
 		}
 		
-		public void read(Consumer<T> dataOut, byte[] key, int start) {
-			DataEntry<T> currentExpr = firstExpr;
+		public void read(Receiver<T> dataOut, byte[] key, int start) {
+			DataEntry<T> currentEntry = firstEntry;
 			for (int i = 0; start + i < key.length; i++) {
 				byte value = key[start + i];
 				if (i >= bytes.length) {
@@ -146,9 +146,9 @@ public class RadixTree<T> {
 				}
 				
 				// Nothing interrupted us? Check if we found an expression
-				if (currentExpr != null && currentExpr.index == nodeStart + i) {
-					dataOut.accept(currentExpr.data);
-					currentExpr = currentExpr.after; // Next (maybe null, that's ok)
+				if (currentEntry != null && currentEntry.index == nodeStart + i) {
+					dataOut.receive(currentEntry.data, i + 1);
+					currentEntry = currentEntry.after; // Next (maybe null, that's ok)
 				}
 			}
 		}
@@ -201,7 +201,7 @@ public class RadixTree<T> {
 			oldNode.branch1 = branch1;
 			
 			// Copy expressions to that node if needed
-			DataEntry<T> firstToCopy = lastExpr;
+			DataEntry<T> firstToCopy = lastEntry;
 			if (firstToCopy != null) {
 				while (firstToCopy.index >= globalIndex && firstToCopy.before != null) {
 					firstToCopy = firstToCopy.before;
@@ -212,8 +212,8 @@ public class RadixTree<T> {
 					firstToCopy = firstToCopy.after;
 				}
 				
-				oldNode.firstExpr = firstToCopy;
-				oldNode.lastExpr = lastExpr;
+				oldNode.firstEntry = firstToCopy;
+				oldNode.lastEntry = lastEntry;
 			}
 			
 			// New node for new content
@@ -234,10 +234,10 @@ public class RadixTree<T> {
 			bytes[index] = value;
 			
 			if (firstToCopy != null) {
-				if (firstExpr == lastExpr) {
-					firstExpr = null;
+				if (firstEntry == lastEntry) {
+					firstEntry = null;
 				}
-				lastExpr = firstToCopy.before;
+				lastEntry = firstToCopy.before;
 				firstToCopy.before = null; // It is in new node now, won't need that
 			}
 			
@@ -251,11 +251,11 @@ public class RadixTree<T> {
 		 */
 		public void addData(int globalIndex, T data) {
 			DataEntry<T> entry = new DataEntry<>(globalIndex, data);
-			if (firstExpr == null) { // First and last expression here
-				firstExpr = entry;
-				lastExpr = entry;
+			if (firstEntry == null) { // First and last expression here
+				firstEntry = entry;
+				lastEntry = entry;
 			} else { // Link to some other expression
-				DataEntry<T> before = firstExpr;
+				DataEntry<T> before = firstEntry;
 				// Go forward to find expression before this one
 				while (before.index < globalIndex && before.after != null) {
 					before = before.after;
@@ -265,7 +265,7 @@ public class RadixTree<T> {
 					before = before.before;
 				}
 				if (before.after == null) {
-					lastExpr = entry; // This is now last expression in node
+					lastEntry = entry; // This is now last expression in node
 				}
 				
 				// Place ourself between before and after
@@ -335,12 +335,27 @@ public class RadixTree<T> {
 	}
 	
 	/**
+	 * Receives data from radix tree.
+	 *
+	 */
+	@FunctionalInterface
+	public static interface Receiver<T> {
+		
+		/**
+		 * Called when a data value is found in the tree.
+		 * @param data The data value.
+		 * @param end Index after the last character that was matched.
+		 */
+		void receive(T data, int end);
+	}
+	
+	/**
 	 * Gets all data that is the given key or prefix of it.
 	 * @param key Key for the data.
-	 * @param dataOut A function that receives data that is found.
+	 * @param receiver A function that receives data that is found.
 	 */
-	public void get(byte[] key, Consumer<T> dataOut) {
-		root.read(dataOut, key, 0);
+	public void get(byte[] key, int start, Receiver<T> receiver) {
+		root.read(receiver, key, start);
 	}
 	
 	/**
@@ -350,7 +365,7 @@ public class RadixTree<T> {
 	 */
 	public List<T> get(byte[] key) {
 		List<T> datas = new ArrayList<>();
-		get(key, datas::add);
+		get(key, 0, (data, end) -> datas.add(data));
 		return datas;
 	}
 	
