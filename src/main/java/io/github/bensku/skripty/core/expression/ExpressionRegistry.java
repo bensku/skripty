@@ -1,7 +1,6 @@
 package io.github.bensku.skripty.core.expression;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import io.github.bensku.skripty.core.SkriptType;

@@ -17,22 +17,21 @@ public class ExpressionInfo {
 	private final Pattern pattern;
 	
 	/**
-	 * Id of the expression that goes to {@link AstNode} and is used to select
-	 * the proper {@link Expression} implementation for it.
+	 * The expression instance.
 	 */
-	private final int expressionId;
+	private final Expression expression;
 
-	public ExpressionInfo(Pattern pattern, int expressionId) {
+	public ExpressionInfo(Pattern pattern, Expression expression) {
 		this.pattern = pattern;
-		this.expressionId = expressionId;
+		this.expression = expression;
 	}
 
 	public Pattern getPattern() {
 		return pattern;
 	}
 
-	public int getExpressionId() {
-		return expressionId;
+	public Expression getExpression() {
+		return expression;
 	}
 	
 }

@@ -1,34 +1,53 @@
 package io.github.bensku.skripty.core;
 
-import io.github.bensku.skripty.core.expression.Expression;
-
 /**
  * An abstract syntax tree node that represents a single expression.
  *
  */
 public class AstNode {
 	
-	/**
-	 * Expression that this node represents
-	 */
-	private final Expression expression;
-	
-	/**
-	 * Nodes that expression represented by this node takes as inputs.
-	 */
-	private final AstNode[] inputs;
-	
-	public AstNode(Expression expression, AstNode[] inputs) {
-		this.expression = expression;
-		this.inputs = inputs;
-	}
+	public static class Literal extends AstNode {
+		
+		/**
+		 * The literal value.
+		 */
+		private final Object value;
+		
+		public Literal(Object value) {
+			this.value = value;
+		}
 
-	public Expression getExpression() {
-		return expression;
+		public Object getValue() {
+			return value;
+		}
 	}
+	
+	public static class Expression extends AstNode {
+		
+		/**
+		 * Expression that this node represents
+		 */
+		private final Expression expression;
+		
+		/**
+		 * Nodes that expression represented by this node takes as inputs.
+		 */
+		private final AstNode[] inputs;
+		
+		public Expression(Expression expression, AstNode[] inputs) {
+			this.expression = expression;
+			this.inputs = inputs;
+		}
 
-	public AstNode[] getInputs() {
-		return inputs;
+		public Expression getExpression() {
+			return expression;
+		}
+
+		public AstNode[] getInputs() {
+			return inputs;
+		}
 	}
+	
+	private AstNode() {}
 	
 }

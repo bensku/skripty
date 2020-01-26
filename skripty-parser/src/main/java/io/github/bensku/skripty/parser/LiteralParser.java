@@ -1,7 +1,5 @@
 package io.github.bensku.skripty.parser;
 
-import java.util.function.Function;
-
 import io.github.bensku.skripty.core.SkriptType;
 
 /**

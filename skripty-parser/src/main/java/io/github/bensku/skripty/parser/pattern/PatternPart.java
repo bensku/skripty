@@ -4,13 +4,17 @@ import java.nio.charset.StandardCharsets;
 
 import io.github.bensku.skripty.core.SkriptType;
 
+/**
+ * Part of {@link Pattern}
+ *
+ */
 public interface PatternPart {
 
 	/**
-	 * A literal pattern part that consists of some text.
+	 * A literal pattern part.
 	 *
 	 */
-	public static class Literal {
+	public static class Literal implements PatternPart {
 		
 		/**
 		 * UTF-8 bytes of text that this literal part matches.
@@ -28,19 +32,32 @@ public interface PatternPart {
 	}
 	
 	/**
-	 * An expression input.
+	 * An input slot.
 	 *
 	 */
-	public static class Input {
+	public static class Input implements PatternPart {
 		
-		private final SkriptType[] inputTypes;
+		/**
+		 * Types accepted by this input slot.
+		 */
+		private final SkriptType[] types;
+		
+		/**
+		 * Index of this input.
+		 */
+		private final int index;
 
-		private Input(SkriptType[] inputTypes) {
-			this.inputTypes = inputTypes;
+		Input(SkriptType[] inputTypes, int index) {
+			this.types = inputTypes;
+			this.index = index;
 		}
 
-		public SkriptType[] getInputTypes() {
-			return inputTypes;
+		public SkriptType[] getTypes() {
+			return types;
+		}
+		
+		public int getIndex() {
+			return index;
 		}
 
 	}
