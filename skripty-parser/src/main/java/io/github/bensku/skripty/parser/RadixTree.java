@@ -1,9 +1,6 @@
 package io.github.bensku.skripty.parser;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * A radix tree used for expression lookups. Operates on UTF-8 string data.
@@ -129,7 +126,7 @@ public class RadixTree<T> {
 			addData(key.length - 1, data);
 		}
 		
-		public void read(Receiver<T> dataOut, byte[] key, int start) {
+		public void read(ResultCollector<T> collector, byte[] key, int start) {
 			DataEntry<T> currentEntry = firstEntry;
 			for (int i = 0; start + i < key.length; i++) {
 				byte value = key[start + i];
@@ -138,7 +135,7 @@ public class RadixTree<T> {
 				} else if (branchIndex == i) { // Need to select a branch
 					Node<T> branch = selectBranch(value);
 					if (branch != null) { // If there is a suitable branch, go for it
-						branch.read(dataOut, key, start + i);
+						branch.read(collector, key, start + i);
 					}
 					break;
 				} else if (bytes[i] != value) {
@@ -147,7 +144,7 @@ public class RadixTree<T> {
 				
 				// Nothing interrupted us? Check if we found an expression
 				if (currentEntry != null && currentEntry.index == nodeStart + i) {
-					dataOut.receive(currentEntry.data, i + 1);
+					collector.add(currentEntry.data);
 					currentEntry = currentEntry.after; // Next (maybe null, that's ok)
 				}
 			}
@@ -335,27 +332,68 @@ public class RadixTree<T> {
 	}
 	
 	/**
-	 * Receives data from radix tree.
+	 * Collects values found from the tree.
 	 *
 	 */
-	@FunctionalInterface
-	public static interface Receiver<T> {
+	@SuppressWarnings("unchecked") // We're not exposing our unsafe stuff in public API
+	private static class ResultCollector<T> {
 		
 		/**
-		 * Called when a data value is found in the tree.
-		 * @param data The data value.
-		 * @param end Index after the last character that was matched.
+		 * Backing array.
 		 */
-		void receive(T data, int end);
+		private final T[] array;
+		
+		/**
+		 * Amount of results in the array.
+		 */
+		private int count;
+		
+		public ResultCollector() {
+			this.array = (T[]) new Object[128];
+		}
+		
+		/**
+		 * Adds a result to this collector.
+		 * @param result Result value.
+		 */
+		public void add(T result) {
+			array[count++] = result;
+		}
+		
+		/**
+		 * Gets a copy of results in an array and resets this collector.
+		 * Note that references to results are kept until they're written over
+		 * at some later point. Since this radix tree doesn't support deletion
+		 * of values, this does not cause memory leaks.
+		 * @return The result values in an array.
+		 */
+		public T[] copyAndReset() {
+			T[] results = (T[]) new Object[count];
+			System.arraycopy(array, 0, results, 0, count);
+			count = 0;
+			return results;
+		}
 	}
+	
+	/**
+	 * The result collector. One per thread is used to avoid race conditions
+	 * in reading.
+	 */
+	private final ThreadLocal<ResultCollector<T>> resultCollector = new ThreadLocal<>();
 	
 	/**
 	 * Gets all data that is the given key or prefix of it.
 	 * @param key Key for the data.
-	 * @param receiver A function that receives data that is found.
+	 * @return List of data that is found.
 	 */
-	public void get(byte[] key, int start, Receiver<T> receiver) {
-		root.read(receiver, key, start);
+	public T[] get(byte[] key, int start) {
+		ResultCollector<T> collector = resultCollector.get();
+		if (collector == null) {
+			collector = new ResultCollector<>();
+			resultCollector.set(collector);
+		}
+		root.read(collector, key, start);
+		return collector.copyAndReset();
 	}
 	
 	/**
@@ -363,18 +401,7 @@ public class RadixTree<T> {
 	 * @param key Key for the data.
 	 * @return List of data that is found.
 	 */
-	public Collection<T> get(byte[] key, int start) {
-		List<T> datas = new ArrayList<>();
-		get(key, start, (data, end) -> datas.add(data));
-		return datas;
-	}
-	
-	/**
-	 * Gets all data that is the given key or prefix of it.
-	 * @param key Key for the data.
-	 * @return List of data that is found.
-	 */
-	public Collection<T> get(String key) {
+	public T[] get(String key) {
 		return get(key.getBytes(StandardCharsets.UTF_8), 0);
 	}
 }
