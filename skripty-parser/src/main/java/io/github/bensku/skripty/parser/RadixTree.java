@@ -1,5 +1,6 @@
 package io.github.bensku.skripty.parser;
 
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -306,9 +307,18 @@ public class RadixTree<T> {
 		}
 	}
 	
+	/**
+	 * Type of elements in this tree.
+	 */
+	private final Class<T> type;
+	
+	/**
+	 * Root node of this tree.
+	 */
 	private final Node<T> root;
 	
-	public RadixTree() {
+	public RadixTree(Class<T> type) {
+		this.type = type;
 		this.root = new Node<>(0);
 		root.bytes = new byte[Node.INITIAL_SIZE];
 	}
@@ -339,6 +349,11 @@ public class RadixTree<T> {
 	private static class ResultCollector<T> {
 		
 		/**
+		 * Type of components in array.
+		 */
+		private final Class<T> type;
+		
+		/**
 		 * Backing array.
 		 */
 		private final T[] array;
@@ -348,8 +363,9 @@ public class RadixTree<T> {
 		 */
 		private int count;
 		
-		public ResultCollector() {
-			this.array = (T[]) new Object[128];
+		public ResultCollector(Class<T> type) {
+			this.type = type;
+			this.array = (T[]) Array.newInstance(type, 128);
 		}
 		
 		/**
@@ -368,7 +384,7 @@ public class RadixTree<T> {
 		 * @return The result values in an array.
 		 */
 		public T[] copyAndReset() {
-			T[] results = (T[]) new Object[count];
+			T[] results = (T[]) Array.newInstance(type, count);
 			System.arraycopy(array, 0, results, 0, count);
 			count = 0;
 			return results;
@@ -389,7 +405,7 @@ public class RadixTree<T> {
 	public T[] get(byte[] key, int start) {
 		ResultCollector<T> collector = resultCollector.get();
 		if (collector == null) {
-			collector = new ResultCollector<>();
+			collector = new ResultCollector<>(type);
 			resultCollector.set(collector);
 		}
 		root.read(collector, key, start);

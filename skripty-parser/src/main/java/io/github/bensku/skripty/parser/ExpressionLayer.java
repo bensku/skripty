@@ -1,7 +1,5 @@
 package io.github.bensku.skripty.parser;
 
-import java.util.Collection;
-
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
@@ -27,8 +25,8 @@ public class ExpressionLayer {
 	private final RadixTree<ExpressionInfo> bySecondPart;
 	
 	public ExpressionLayer() {
-		this.byFirstPart = new RadixTree<>();
-		this.bySecondPart = new RadixTree<>();
+		this.byFirstPart = new RadixTree<>(ExpressionInfo.class);
+		this.bySecondPart = new RadixTree<>(ExpressionInfo.class);
 	}
 	
 	/**
@@ -49,11 +47,11 @@ public class ExpressionLayer {
 		}
 	}
 	
-	public Collection<ExpressionInfo> lookupFirst(byte[] input, int start) {
+	public ExpressionInfo[] lookupFirst(byte[] input, int start) {
 		return byFirstPart.get(input, start);
 	}
 	
-	public Collection<ExpressionInfo> lookupSecond(byte[] input, int start) {
+	public ExpressionInfo[] lookupSecond(byte[] input, int start) {
 		return bySecondPart.get(input, start);
 	}
 }

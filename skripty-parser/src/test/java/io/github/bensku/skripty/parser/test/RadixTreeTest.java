@@ -15,7 +15,7 @@ import io.github.bensku.skripty.parser.util.ArrayHelpers;
 @TestInstance(Lifecycle.PER_METHOD)
 public class RadixTreeTest {
 
-	private final RadixTree<Object> tree = new RadixTree<>();
+	private final RadixTree<Object> tree = new RadixTree<>(Object.class);
 	
 	@Test
 	public void noBranches() {
@@ -74,5 +74,13 @@ public class RadixTreeTest {
 		assertTrue(ArrayHelpers.contains(results2, marker1));
 		assertTrue(ArrayHelpers.contains(results2, marker4));
 		assertTrue(Arrays.equals(results, tree.get("alpha beta gamma")));
+	}
+	
+	@Test
+	public void genericSafety() {
+		RadixTree<Integer> intTree = new RadixTree<>(Integer.class);
+		intTree.put("one", 1);
+		Integer[] results = intTree.get("one"); // Should not throw CCE
+		assertEquals(1, results[0]);
 	}
 }
