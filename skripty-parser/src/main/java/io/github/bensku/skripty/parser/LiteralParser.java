@@ -10,7 +10,7 @@ import io.github.bensku.skripty.core.SkriptType;
 @FunctionalInterface
 public interface LiteralParser {
 	
-	public static class Result {
+	class Result {
 		
 		private final SkriptType type;
 		

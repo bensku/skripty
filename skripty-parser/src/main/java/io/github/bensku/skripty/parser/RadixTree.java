@@ -58,7 +58,7 @@ public class RadixTree<T> {
 		 * Creates a new node.
 		 * @param nodeStart Global start index for the node.
 		 */
-		public Node(int nodeStart) {
+		Node(int nodeStart) {
 			this.nodeStart = nodeStart;
 			this.branchIndex = -1;
 		}
@@ -152,6 +152,19 @@ public class RadixTree<T> {
 		}
 		
 		/**
+		 * Byte converted to int has this many more leading zeroes when used
+		 * with {@link Integer#numberOfLeadingZeros(int)}. {@link Byte} does
+		 * not provide an alternative method, so we'll just subtract from
+		 * the result.
+		 */
+		private static final int LEADING_ZEROS_INT_BYTE = 24;
+		
+		/**
+		 * Largest bit index in a byte.
+		 */
+		private static final int BYTE_BIT_MAX = 7;
+		
+		/**
 		 * Selects a branch based on given value for byte at it.
 		 * @param value The byte at {@link #branchIndex} that will be used to
 		 * decide which path we branch to.
@@ -160,12 +173,12 @@ public class RadixTree<T> {
 		 */
 		public Node<T> selectBranch(byte value) {
 			// Find the first differing bit
-			int diffBit = Integer.numberOfLeadingZeros(bytes[branchIndex] ^ value) - 24;
+			int diffBit = Integer.numberOfLeadingZeros(bytes[branchIndex] ^ value) - LEADING_ZEROS_INT_BYTE;
 			if (diffBit < branchBit) { // Difference BEFORE the branch bit!
 				return null; // Caller might want to create a branch
 			} else { // Just select a branch
 				// Create a mask where branch bit is 1, everything else zero
-				int mismatchMask = 1 << (7 - branchBit);
+				int mismatchMask = 1 << (BYTE_BIT_MAX - branchBit);
 				// Check whether our or their bit there is zero
 				boolean ourZero = (mismatchMask & value) == 0;
 				return ourZero ? branch0 : branch1;
@@ -180,10 +193,10 @@ public class RadixTree<T> {
 		 */
 		public Node<T> createBranch(int index, byte value) {
 			int globalIndex = nodeStart + index;
-			int bitIndex = Integer.numberOfLeadingZeros(bytes[index] ^ value) - 24;
+			int bitIndex = Integer.numberOfLeadingZeros(bytes[index] ^ value) - LEADING_ZEROS_INT_BYTE;
 			
 			// Create a mask where this is 1, everything else zero
-			int mismatchMask = 1 << (7 - bitIndex);
+			int mismatchMask = 1 << (BYTE_BIT_MAX - bitIndex);
 			// Check whether our or their bit there is zero
 			boolean ourZero = (mismatchMask & value) == 0;
 			
@@ -301,7 +314,7 @@ public class RadixTree<T> {
 		 */
 		private DataEntry<T> after;
 		
-		public DataEntry(int index, T data) {
+		DataEntry(int index, T data) {
 			this.index = index;
 			this.data = data;
 		}
@@ -342,6 +355,11 @@ public class RadixTree<T> {
 	}
 	
 	/**
+	 * How many results can be returned. TODO don't use a fixed-size array
+	 */
+	private static final int MAX_RESULTS = 128;
+	
+	/**
 	 * Collects values found from the tree.
 	 *
 	 */
@@ -363,9 +381,9 @@ public class RadixTree<T> {
 		 */
 		private int count;
 		
-		public ResultCollector(Class<T> type) {
+		ResultCollector(Class<T> type) {
 			this.type = type;
-			this.array = (T[]) Array.newInstance(type, 128);
+			this.array = (T[]) Array.newInstance(type, MAX_RESULTS);
 		}
 		
 		/**

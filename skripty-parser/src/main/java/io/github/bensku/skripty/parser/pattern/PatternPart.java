@@ -14,7 +14,7 @@ public interface PatternPart {
 	 * A literal pattern part.
 	 *
 	 */
-	public static class Literal implements PatternPart {
+	class Literal implements PatternPart {
 		
 		/**
 		 * UTF-8 bytes of text that this literal part matches.
@@ -35,7 +35,7 @@ public interface PatternPart {
 	 * An input slot.
 	 *
 	 */
-	public static class Input implements PatternPart {
+	class Input implements PatternPart {
 		
 		/**
 		 * Types accepted by this input slot.

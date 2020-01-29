@@ -6,11 +6,11 @@ package io.github.bensku.skripty.core;
  */
 public interface SkriptType {
 	
-	public static SkriptType.Virtual create(String className) {
+	static SkriptType.Virtual create(String className) {
 		return new SkriptType.Virtual(className);
 	}
 	
-	public static SkriptType.Concrete create(Class<?> backingClass) {
+	static SkriptType.Concrete create(Class<?> backingClass) {
 		return new SkriptType.Concrete(backingClass);
 	}
 	
@@ -27,7 +27,7 @@ public interface SkriptType {
 	 * available in this JVM.
 	 *
 	 */
-	public static class Virtual implements SkriptType {
+	class Virtual implements SkriptType {
 
 		/**
 		 * Name of class backing this type. Not necessarily loaded in this JVM!
@@ -71,7 +71,7 @@ public interface SkriptType {
 	 * currently running JVM.
 	 *
 	 */
-	public static class Concrete implements SkriptType {
+	class Concrete implements SkriptType {
 
 		/**
 		 * The backing class for this type.

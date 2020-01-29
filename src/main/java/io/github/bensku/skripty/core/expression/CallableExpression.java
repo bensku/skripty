@@ -27,18 +27,18 @@ public class CallableExpression extends Expression {
 			this.instance = instance;
 		}
 		
-		public Builder inputTypes(InputType... inputTypes) {
-			this.inputTypes = inputTypes;
+		public Builder inputTypes(InputType... types) {
+			this.inputTypes = types;
 			return this;
 		}
 		
-		public Builder returnType(SkriptType returnType) {
-			this.returnType = returnType;
+		public Builder returnType(SkriptType type) {
+			this.returnType = type;
 			return this;
 		}
 		
-		public Builder callTargets(MethodHandle... callTargets) {
-			this.callTargets = callTargets;
+		public Builder callTargets(MethodHandle... targets) {
+			this.callTargets = targets;
 			return this;
 		}
 		

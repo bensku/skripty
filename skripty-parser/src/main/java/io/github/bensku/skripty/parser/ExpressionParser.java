@@ -12,6 +12,11 @@ import io.github.bensku.skripty.parser.util.ArrayHelpers;
  *
  */
 public class ExpressionParser {
+	
+	/**
+	 * Temporary limit for amount of parse results. TODO do not use fixed-size arrays
+	 */
+	private static final int PARSE_MAX_RESULTS = 128;
 
 	/**
 	 * Parsers for literal types. These are applied basically everywhere before
@@ -79,7 +84,7 @@ public class ExpressionParser {
 		}
 		
 		// If it fails, parse expressions instead
-		Result[] tempResults = new Result[128]; // TODO try to guess result count instead
+		Result[] tempResults = new Result[PARSE_MAX_RESULTS]; // TODO try to guess result count instead
 		int resultCount = 0;
 		
 		// Search expressions from each layer
