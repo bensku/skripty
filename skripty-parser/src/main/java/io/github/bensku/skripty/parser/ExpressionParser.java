@@ -1,8 +1,6 @@
 package io.github.bensku.skripty.parser;
 
 import java.util.Arrays;
-import java.util.Collection;
-
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.parser.pattern.Pattern;
@@ -32,6 +30,10 @@ public class ExpressionParser {
 		this.expressions = expressions;
 	}
 	
+	/**
+	 * A result from an {@link ExpressionParser expression parser} operation.
+	 *
+	 */
 	public static class ParseResult {
 		
 		/**
@@ -59,17 +61,60 @@ public class ExpressionParser {
 
 	}
 	
+	/**
+	 * Attempts to parse given input string.
+	 * @param input Bytes of UTF-8 encoded input string.
+	 * @param start Where to start parsing from in the input array.
+	 * @param types Accepted return types of parsed expressions.
+	 * @return The parse results, or an empty array if parsing failed.
+	 */
 	public ParseResult[] parse(byte[] input, int start, SkriptType[] types) {
+		// Try literal parsing first
+		for (LiteralParser parser : literalParsers) {
+			LiteralParser.Result result = parser.parse(input, start);
+			if (result != null) {
+				AstNode node = new AstNode.Literal(result.getValue());
+				return new ParseResult[] {new ParseResult(node, result.getEnd())};
+			}
+		}
+		
+		// If it fails, parse expressions instead
+		ParseResult[] tempResults = new ParseResult[128]; // TODO try to guess result count instead
+		int resultCount = 0;
+		
 		// Search expressions from each layer
 		for (ExpressionLayer layer : expressions) {
-			parseWithLayer(layer, input, start, types);
+			ParseResult[] results = parseWithLayer(layer, input, start, types);
+			for (ParseResult result : results) {
+				if (result == null) {
+					break; // Only nulls after this
+				}
+				tempResults[resultCount++] = result;
+			}
 		}
-		return null;
+		
+		// Ensure that the returned array has no trailing nulls
+		ParseResult[] allResults = new ParseResult[resultCount];
+		System.arraycopy(tempResults, 0, allResults, 0, resultCount);
+		
+		return allResults;
 	}
 	
+	/**
+	 * Parses given input with given expression layer. Note that this does
+	 * not invoke {@link LiteralParser literal parsers}, which prevents ALL
+	 * literals from being parsed.
+	 * @param layer Layer to query expressions from.
+	 * @param input Input to parse.
+	 * @param start Index of byte where to start parsing from in input.
+	 * @param types Accepted return types of parse results.
+	 * @return Parse results, or an empty array if the input cannot be parsed
+	 * in any way.
+	 */
 	private ParseResult[] parseWithLayer(ExpressionLayer layer, byte[] input, int start, SkriptType[] types) {
 		ExpressionInfo[] candidates = layer.lookupFirst(input, start);
 		ParseResult[] results = new ParseResult[candidates.length];
+		int resultCount = 0;
 		
 		// Go through candidate expressions, find those that might match
 		for (int i = 0; i < candidates.length; i++) {
@@ -83,12 +128,26 @@ public class ExpressionParser {
 			int pos = start + ((PatternPart.Literal) info.getPattern().partAt(0)).getText().length;
 			
 			// Try to match pattern of the candidate
-			// Success or a failure, we'll return that to caller
-			results[i] = matchPattern(info, 1, input, pos);
+			// Success or a failure, we'll return that (result or null) to caller
+			ParseResult result = matchPattern(info, 1, input, pos);
+			if (result != null) {
+				results[resultCount++] = result;
+			}
 		}
 		return results;
 	}
 	
+	/**
+	 * Matches pattern of an expression against input.
+	 * @param info Expression info. This references both the pattern and
+	 * expression.
+	 * @param firstPart Index of first pattern part that we should evaluate.
+	 * This is used to avoid evaluating parts twice when a they've been already
+	 * matched by e.g {@link RadixTree the expression tree}.
+	 * @param input Input (UTF-8) bytes to match against.
+	 * @param pos Starting position in the input.
+	 * @return A parse result if the given expression matches, null otherwise.
+	 */
 	private ParseResult matchPattern(ExpressionInfo info, int firstPart, byte[] input, int pos) {
 		AstNode.Expr node = new AstNode.Expr(info.getExpression());
 		

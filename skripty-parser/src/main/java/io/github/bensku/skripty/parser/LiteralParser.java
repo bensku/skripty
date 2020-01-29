@@ -17,14 +17,14 @@ public interface LiteralParser {
 		private final Object value;
 		
 		/**
-		 * How many bytes were parsed.
+		 * End index (exclusive) of the parsing operation in the input array.
 		 */
-		private final int bytesConsumed;
+		private final int end;
 		
-		protected Result(SkriptType type, Object value, int bytesConsumed) {
+		protected Result(SkriptType type, Object value, int end) {
 			this.type = type;
 			this.value = value;
-			this.bytesConsumed = bytesConsumed;
+			this.end = end;
 		}
 	
 		public SkriptType getType() {
@@ -35,11 +35,11 @@ public interface LiteralParser {
 			return value;
 		}
 
-		public int getBytesConsumed() {
-			return bytesConsumed;
+		public int getEnd() {
+			return end;
 		}
 
 	}
 
-	Result parse(byte[] input);
+	Result parse(byte[] input, int start);
 }
