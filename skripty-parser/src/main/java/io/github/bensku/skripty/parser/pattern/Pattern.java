@@ -19,7 +19,7 @@ public class Pattern {
 	 * @return A new pattern.
 	 * @throws IllegalArgumentException When invalid parts are provided.
 	 */
-	public Pattern create(Object... parts) {
+	public static Pattern create(Object... parts) {
 		PatternPart[] doneParts = new PatternPart[parts.length];
 		int inputIndex = 0;
 		for (int i = 0; i < parts.length; i++) {

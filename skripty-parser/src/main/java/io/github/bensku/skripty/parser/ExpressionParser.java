@@ -25,7 +25,7 @@ public class ExpressionParser {
 	 */
 	private final ExpressionLayer[] expressions;
 
-	private ExpressionParser(LiteralParser[] literalParsers, ExpressionLayer[] expressions) {
+	public ExpressionParser(LiteralParser[] literalParsers, ExpressionLayer[] expressions) {
 		this.literalParsers = literalParsers;
 		this.expressions = expressions;
 	}
@@ -34,7 +34,7 @@ public class ExpressionParser {
 	 * A result from an {@link ExpressionParser expression parser} operation.
 	 *
 	 */
-	public static class ParseResult {
+	public static class Result {
 		
 		/**
 		 * The AST node resulting from parsing.
@@ -46,7 +46,7 @@ public class ExpressionParser {
 		 */
 		private final int end;
 
-		private ParseResult(AstNode node, int end) {
+		private Result(AstNode node, int end) {
 			this.node = node;
 			this.end = end;
 		}
@@ -68,24 +68,24 @@ public class ExpressionParser {
 	 * @param types Accepted return types of parsed expressions.
 	 * @return The parse results, or an empty array if parsing failed.
 	 */
-	public ParseResult[] parse(byte[] input, int start, SkriptType[] types) {
+	public Result[] parse(byte[] input, int start, SkriptType[] types) {
 		// Try literal parsing first
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result result = parser.parse(input, start);
 			if (result != null) {
 				AstNode node = new AstNode.Literal(result.getValue());
-				return new ParseResult[] {new ParseResult(node, result.getEnd())};
+				return new Result[] {new Result(node, result.getEnd())};
 			}
 		}
 		
 		// If it fails, parse expressions instead
-		ParseResult[] tempResults = new ParseResult[128]; // TODO try to guess result count instead
+		Result[] tempResults = new Result[128]; // TODO try to guess result count instead
 		int resultCount = 0;
 		
 		// Search expressions from each layer
 		for (ExpressionLayer layer : expressions) {
-			ParseResult[] results = parseWithLayer(layer, input, start, types);
-			for (ParseResult result : results) {
+			Result[] results = parseWithLayer(layer, input, start, types);
+			for (Result result : results) {
 				if (result == null) {
 					break; // Only nulls after this
 				}
@@ -94,7 +94,7 @@ public class ExpressionParser {
 		}
 		
 		// Ensure that the returned array has no trailing nulls
-		ParseResult[] allResults = new ParseResult[resultCount];
+		Result[] allResults = new Result[resultCount];
 		System.arraycopy(tempResults, 0, allResults, 0, resultCount);
 		
 		return allResults;
@@ -111,9 +111,9 @@ public class ExpressionParser {
 	 * @return Parse results, or an empty array if the input cannot be parsed
 	 * in any way.
 	 */
-	private ParseResult[] parseWithLayer(ExpressionLayer layer, byte[] input, int start, SkriptType[] types) {
+	private Result[] parseWithLayer(ExpressionLayer layer, byte[] input, int start, SkriptType[] types) {
 		ExpressionInfo[] candidates = layer.lookupFirst(input, start);
-		ParseResult[] results = new ParseResult[candidates.length];
+		Result[] results = new Result[candidates.length];
 		int resultCount = 0;
 		
 		// Go through candidate expressions, find those that might match
@@ -129,7 +129,7 @@ public class ExpressionParser {
 			
 			// Try to match pattern of the candidate
 			// Success or a failure, we'll return that (result or null) to caller
-			ParseResult result = matchPattern(info, 1, input, pos);
+			Result result = matchPattern(info, 1, input, pos);
 			if (result != null) {
 				results[resultCount++] = result;
 			}
@@ -148,7 +148,7 @@ public class ExpressionParser {
 	 * @param pos Starting position in the input.
 	 * @return A parse result if the given expression matches, null otherwise.
 	 */
-	private ParseResult matchPattern(ExpressionInfo info, int firstPart, byte[] input, int pos) {
+	private Result matchPattern(ExpressionInfo info, int firstPart, byte[] input, int pos) {
 		AstNode.Expr node = new AstNode.Expr(info.getExpression());
 		
 		// Initially empty array of this candidate's inputs
@@ -176,12 +176,12 @@ public class ExpressionParser {
 				int inputIndex = ((PatternPart.Input) part).getIndex();
 				
 				// Get potential inputs
-				ParseResult[] potentialInputs = parse(input, pos, ((PatternPart.Input) part).getTypes());
+				Result[] potentialInputs = parse(input, pos, ((PatternPart.Input) part).getTypes());
 				
 				// Evaluate whether or not we can parse parts of this expression
 				// AFTER this input, should it be used
-				for (ParseResult result : potentialInputs) {
-					ParseResult after = matchPattern(info, i + 1, input, result.getEnd());
+				for (Result result : potentialInputs) {
+					Result after = matchPattern(info, i + 1, input, result.getEnd());
 					if (after != null) {
 						// Assign this as input
 						inputs[inputIndex] = result.getNode();
@@ -198,7 +198,7 @@ public class ExpressionParser {
 		}
 		
 		// Everything went well, got an AST node out of it
-		return new ParseResult(node, pos);
+		return new Result(node, pos);
 	}
 
 }

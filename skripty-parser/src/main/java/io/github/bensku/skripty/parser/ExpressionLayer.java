@@ -36,14 +36,18 @@ public class ExpressionLayer {
 	 */
 	public void register(Expression expression, Pattern pattern) {
 		PatternPart first = pattern.partAt(0);
-		PatternPart second = pattern.partAt(1);
 		
 		ExpressionInfo info = new ExpressionInfo(pattern, expression);
 		if (first instanceof PatternPart.Literal) {
 			byFirstPart.put(((PatternPart.Literal) first).getText(), info);
 		} else {
-			assert second instanceof PatternPart.Literal : "first or second should be literal";
-			bySecondPart.put(((PatternPart.Literal) second).getText(), info);
+			if (pattern.length() > 1) {
+				PatternPart second = pattern.partAt(1);
+				assert second instanceof PatternPart.Literal : "first or second should be literal";
+				bySecondPart.put(((PatternPart.Literal) second).getText(), info);
+			} else {
+				throw new UnsupportedOperationException("expressions with no literal parts are not supported at the moment");
+			}
 		}
 	}
 	
