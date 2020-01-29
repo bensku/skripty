@@ -4,3 +4,7 @@
 ## Progress Reports
 * [Week 1](https://github.com/bensku/skripty/blob/master/docs/week-1.md)
 * [Week 2](https://github.com/bensku/skripty/blob/master/docs/week-2.md)
+
+## Status
+All commits are built by Github Actions; potential errors can be viewed from there.
+Style issues are configured to make the build fail.
