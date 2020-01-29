@@ -1,6 +1,5 @@
 package io.github.bensku.skripty.parser;
 
-import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 

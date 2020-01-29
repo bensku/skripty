@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -14,6 +13,7 @@ import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
+import io.github.bensku.skripty.core.expression.InputType;
 import io.github.bensku.skripty.parser.ExpressionLayer;
 import io.github.bensku.skripty.parser.ExpressionParser;
 import io.github.bensku.skripty.parser.LiteralParser;
@@ -27,11 +27,17 @@ public class ExpressionParserTest {
 	private ExpressionParser parser;
 	
 	private Expression constantHello;
+	private Expression exprSay;
 	
 	@BeforeEach
 	public void initExpressions() {
 		ExpressionRegistry registry = new ExpressionRegistry();
 		constantHello = registry.makeConstant(stringType, "Hello, world!");
+		exprSay = registry.makeCallable(this)
+				.inputTypes(new InputType(true, stringType))
+				.returnType(stringType) // TODO void return type
+				.callTargets()
+				.create();
 	}
 	
 	@BeforeEach
@@ -40,6 +46,7 @@ public class ExpressionParserTest {
 		
 		ExpressionLayer basicLayer = new ExpressionLayer();
 		basicLayer.register(constantHello, Pattern.create("greeting"));
+		basicLayer.register(exprSay, Pattern.create("say ", new InputType(false, stringType)));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);
@@ -58,5 +65,10 @@ public class ExpressionParserTest {
 	@Test
 	public void simpleConstant() {
 		parseAll("greeting", constantHello);
+	}
+	
+	@Test
+	public void simpleCallable() {
+		parseAll("say greeting", exprSay);
 	}
 }
