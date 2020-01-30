@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.parser;
 
 import java.util.Arrays;
+
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.parser.pattern.Pattern;
@@ -50,10 +51,16 @@ public class ExpressionParser {
 		 * End index of this parse operation in input (exclusive).
 		 */
 		private final int end;
+		
+		/**
+		 * Return type of the parsed expression.
+		 */
+		private final SkriptType returnType;
 
-		private Result(AstNode node, int end) {
+		private Result(AstNode node, int end, SkriptType returnType) {
 			this.node = node;
 			this.end = end;
+			this.returnType = returnType;
 		}
 
 		public AstNode getNode() {
@@ -62,6 +69,10 @@ public class ExpressionParser {
 
 		public int getEnd() {
 			return end;
+		}
+		
+		public SkriptType getReturnType() {
+			return returnType;
 		}
 
 	}
@@ -79,7 +90,7 @@ public class ExpressionParser {
 			LiteralParser.Result result = parser.parse(input, start);
 			if (result != null) {
 				AstNode node = new AstNode.Literal(result.getValue());
-				return new Result[] {new Result(node, result.getEnd())};
+				return new Result[] {new Result(node, result.getEnd(), result.getType())};
 			}
 		}
 		
@@ -89,12 +100,19 @@ public class ExpressionParser {
 		
 		// Search expressions from each layer
 		for (ExpressionLayer layer : expressions) {
-			Result[] results = parseWithLayer(layer, input, start, types);
+			Result[] results = parseFirst(layer, input, start);
 			for (Result result : results) {
 				if (result == null) {
 					break; // Only nulls after this
 				}
-				tempResults[resultCount++] = result;
+				
+				// Add this result if it is of correct type
+				if (ArrayHelpers.contains(types, result.getReturnType())) {
+					tempResults[resultCount++] = result;
+				}
+				
+				// Try using it as first input to expressions
+				wrapAsFirstInput(input, tempResults, resultCount, result, types);
 			}
 		}
 		
@@ -106,17 +124,45 @@ public class ExpressionParser {
 	}
 	
 	/**
-	 * Parses given input with given expression layer. Note that this does
-	 * not invoke {@link LiteralParser literal parsers}, which prevents ALL
-	 * literals from being parsed.
+	 * Attempts to wrap an expression as first input to another expression.
+	 * This is done recursively as long as parsing against input succeeds.
+	 * @param input Input string.
+	 * @param out Array where we write results.
+	 * @param resultCount Current result count.
+	 * @param original Original parse result with expression we'll try to wrap.
+	 * @param types Accepted return types of the resulting expressions.
+	 * @return New result count in out array.
+	 */
+	private int wrapAsFirstInput(byte[] input, Result[] out, int resultCount, Result original, SkriptType[] types) {
+		for (ExpressionLayer layer : expressions) {
+			Result[] secondResults = parseSecond(layer, original.getReturnType(), input, original.getEnd());
+			for (Result result : secondResults) {
+				if (result == null) {
+					break;
+				}
+				
+				// If this is of correct type, add it to results
+				if (ArrayHelpers.contains(types, result.getReturnType())) {
+					out[resultCount++] = result;
+				}
+				
+				// Check if that could be used as first input to something else
+				resultCount = wrapAsFirstInput(input, out, resultCount, result, types);
+			}
+		}
+		return resultCount;
+	}
+	
+	/**
+	 * Parses all matching expressions by using input as a key to their first
+	 * parts.
 	 * @param layer Layer to query expressions from.
 	 * @param input Input to parse.
 	 * @param start Index of byte where to start parsing from in input.
-	 * @param types Accepted return types of parse results.
 	 * @return Parse results, or an empty array if the input cannot be parsed
 	 * in any way.
 	 */
-	private Result[] parseWithLayer(ExpressionLayer layer, byte[] input, int start, SkriptType[] types) {
+	private Result[] parseFirst(ExpressionLayer layer, byte[] input, int start) {
 		ExpressionInfo[] candidates = layer.lookupFirst(input, start);
 		Result[] results = new Result[candidates.length];
 		int resultCount = 0;
@@ -124,10 +170,7 @@ public class ExpressionParser {
 		// Go through candidate expressions, find those that might match
 		for (int i = 0; i < candidates.length; i++) {
 			ExpressionInfo info = candidates[i];
-			if (!ArrayHelpers.contains(types, info.getExpression().getReturnType())) {
-				continue; // Skip candidates with incompatible return types
-			}
-			
+
 			// Current position (index) in input array
 			// TODO maybe something less hacky for getting current position?
 			int pos = start + ((PatternPart.Literal) info.getPattern().partAt(0)).getText().length;
@@ -135,6 +178,45 @@ public class ExpressionParser {
 			// Try to match pattern of the candidate
 			// Success or a failure, we'll return that (result or null) to caller
 			Result result = matchPattern(info, 1, input, pos);
+			if (result != null) {
+				results[resultCount++] = result;
+			}
+		}
+		return results;
+	}
+	
+	/**
+	 * Parses all matching expressions by using input as a key to their second
+	 * parts. The first parts must be inputs that accept the given type.
+	 * @param layer Layer to query expressions from.
+	 * @param firstType Type of the first input.
+	 * @param input Input to parse.
+	 * @param start Index of byte where to start parsing from in input.
+	 * @return Parse results, or an empty array if the input cannot be parsed
+	 * in any way.
+	 */
+	private Result[] parseSecond(ExpressionLayer layer, SkriptType firstType, byte[] input, int start) {
+		ExpressionInfo[] candidates = layer.lookupSecond(input, start);
+		Result[] results = new Result[candidates.length];
+		int resultCount = 0;
+		
+		// Go through candidate expressions, find those that might match
+		for (int i = 0; i < candidates.length; i++) {
+			ExpressionInfo info = candidates[i];
+			Pattern pattern = info.getPattern();
+			
+			assert pattern.partAt(0) instanceof PatternPart.Input : "expression without first input in second tree";
+			if (!ArrayHelpers.contains(((PatternPart.Input) pattern.partAt(0)).getTypes(), firstType)) {
+				continue; // Doesn't accept our type as argument
+			}
+
+			// Current position (index) in input array
+			// TODO maybe something less hacky for getting current position?
+			int pos = start + ((PatternPart.Literal) info.getPattern().partAt(1)).getText().length;
+			
+			// Try to match pattern of the candidate
+			// Success or a failure, we'll return that (result or null) to caller
+			Result result = matchPattern(info, 2, input, pos);
 			if (result != null) {
 				results[resultCount++] = result;
 			}
@@ -203,7 +285,7 @@ public class ExpressionParser {
 		}
 		
 		// Everything went well, got an AST node out of it
-		return new Result(node, pos);
+		return new Result(node, pos, info.getExpression().getReturnType());
 	}
 
 }
