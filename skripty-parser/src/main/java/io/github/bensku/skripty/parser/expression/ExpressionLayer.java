@@ -1,8 +1,9 @@
-package io.github.bensku.skripty.parser;
+package io.github.bensku.skripty.parser.expression;
 
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
+import io.github.bensku.skripty.parser.util.RadixTree;
 
 /**
  * A layer contains expression definitions ready to be used by the parser.

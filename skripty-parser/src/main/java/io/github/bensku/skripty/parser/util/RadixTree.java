@@ -1,4 +1,4 @@
-package io.github.bensku.skripty.parser;
+package io.github.bensku.skripty.parser.util;
 
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;

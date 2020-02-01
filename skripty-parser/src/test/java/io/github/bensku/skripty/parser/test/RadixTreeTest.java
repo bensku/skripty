@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.github.bensku.skripty.parser.RadixTree;
 import io.github.bensku.skripty.parser.util.ArrayHelpers;
+import io.github.bensku.skripty.parser.util.RadixTree;
 
 @TestInstance(Lifecycle.PER_METHOD)
 public class RadixTreeTest {

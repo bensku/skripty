@@ -14,9 +14,9 @@ import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
 import io.github.bensku.skripty.core.expression.InputType;
-import io.github.bensku.skripty.parser.ExpressionLayer;
-import io.github.bensku.skripty.parser.ExpressionParser;
-import io.github.bensku.skripty.parser.LiteralParser;
+import io.github.bensku.skripty.parser.expression.ExpressionLayer;
+import io.github.bensku.skripty.parser.expression.ExpressionParser;
+import io.github.bensku.skripty.parser.expression.LiteralParser;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 
 @TestInstance(Lifecycle.PER_METHOD) // Clean state for every test, just in case...
@@ -35,7 +35,7 @@ public class ExpressionParserTest {
 		constantHello = registry.makeConstant(stringType, "Hello, world!");
 		exprSay = registry.makeCallable(this)
 				.inputTypes(new InputType(true, stringType))
-				.returnType(stringType) // TODO void return type
+				.returnType(stringType)
 				.callTargets()
 				.create();
 	}
@@ -70,5 +70,10 @@ public class ExpressionParserTest {
 	@Test
 	public void simpleCallable() {
 		parseAll("say greeting", exprSay);
+	}
+	
+	@Test
+	public void recursiveSay() {
+		parseAll("say say say greeting", exprSay);
 	}
 }

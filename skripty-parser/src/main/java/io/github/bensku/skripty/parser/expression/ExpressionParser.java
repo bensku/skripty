@@ -1,4 +1,4 @@
-package io.github.bensku.skripty.parser;
+package io.github.bensku.skripty.parser.expression;
 
 import java.util.Arrays;
 
@@ -7,6 +7,7 @@ import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
 import io.github.bensku.skripty.parser.util.ArrayHelpers;
+import io.github.bensku.skripty.parser.util.RadixTree;
 
 /**
  * Parses expressions into {@link AstNode}s.

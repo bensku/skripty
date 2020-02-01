@@ -1,4 +1,4 @@
-package io.github.bensku.skripty.parser;
+package io.github.bensku.skripty.parser.expression;
 
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.parser.pattern.Pattern;
