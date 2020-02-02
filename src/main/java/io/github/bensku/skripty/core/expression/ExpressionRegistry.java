@@ -30,4 +30,8 @@ public class ExpressionRegistry {
 		addExpression(expr);
 		return expr;
 	}
+
+	public int getExpressionCount() {
+		return expressions.size();
+	}
 }

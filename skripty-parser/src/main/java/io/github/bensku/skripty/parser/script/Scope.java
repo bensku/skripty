@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.flow.ScopeEntry;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
 
 /**
@@ -15,19 +16,58 @@ public class Scope {
 	/**
 	 * Parser for titles of inner scopes.
 	 */
-	private ExpressionParser innerScopeParser;
+	private final ExpressionParser scopeParser;
+	
+	/**
+	 * Registry of inner scopes.
+	 */
+	private final ScopeRegistry scopeRegistry;
 	
 	/**
 	 * Parser for statements in this scope.
 	 */
-	private ExpressionParser statementParser;
+	private final ExpressionParser statementParser;
 	
-	public AstNode parseScope(String title) {
-		ExpressionParser.Result[] results = innerScopeParser.parse(title.getBytes(StandardCharsets.UTF_8), 0, SkriptType.VOID);
+	public Scope(ExpressionParser scopeParser, ScopeRegistry scopeRegistry, ExpressionParser statementParser) {
+		this.scopeParser = scopeParser;
+		this.scopeRegistry = scopeRegistry;
+		this.statementParser = statementParser;
+	}
+	
+	public static class ParseResult {
+		
+		/**
+		 * Node of title expression of the inner scope.
+		 */
+		private final AstNode title;
+
+		/**
+		 * The inner scope definition.
+		 */
+		private final Scope scope;
+
+		private ParseResult(AstNode title, Scope scope) {
+			this.title = title;
+			this.scope = scope;
+		}
+
+		public AstNode getTitle() {
+			return title;
+		}
+
+		public Scope getScope() {
+			return scope;
+		}
+		
+	}
+	
+	public ParseResult parseScope(String title) {
+		ExpressionParser.Result[] results = scopeParser.parse(title.getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
 		if (results.length == 0) {
 			// TODO error handling :)
 		}
-		return results[0].getNode();
+		AstNode node = results[0].getNode();
+		return new ParseResult(results[0].getNode(), scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
 	}
 	
 	public AstNode parseStatement(String statement) {
