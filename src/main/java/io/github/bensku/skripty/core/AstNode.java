@@ -24,7 +24,7 @@ public class AstNode {
 		}
 	}
 	
-	public static class Expr extends AstNode {
+	public static class Expr extends AstNode implements ParsedScript.Entry {
 		
 		/**
 		 * Expression that this node represents

@@ -1,6 +1,6 @@
 package io.github.bensku.skripty.parser.script;
 
-public class BlockParser {
+public class SectionParser {
 	
 	/**
 	 * Estimated size of section node.

@@ -11,11 +11,11 @@ import java.util.Iterator;
 import org.junit.jupiter.api.Test;
 
 import io.github.bensku.skripty.parser.script.SourceNode;
-import io.github.bensku.skripty.parser.script.BlockParser;
+import io.github.bensku.skripty.parser.script.SectionParser;
 
-public class BlockParserTest {
+public class SectionParserTest {
 
-	private final BlockParser parser = new BlockParser();
+	private final SectionParser parser = new SectionParser();
 	
 	private SourceNode.Section parseFile(String name) {
 		try {

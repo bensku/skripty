@@ -6,6 +6,11 @@ package io.github.bensku.skripty.core;
  */
 public interface SkriptType {
 	
+	/**
+	 * A type that represents nothing (Java/JVM void).
+	 */
+	static SkriptType VOID = create(void.class);
+	
 	static SkriptType.Virtual create(String className) {
 		return new SkriptType.Virtual(className);
 	}
@@ -45,6 +50,8 @@ public interface SkriptType {
 		
 		private Class<?> parseClassName(String name) throws ClassNotFoundException {
 			switch (name) {
+			case "void":
+				return void.class;
 			case "byte":
 				return byte.class;
 			case "short":

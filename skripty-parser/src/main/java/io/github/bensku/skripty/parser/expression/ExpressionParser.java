@@ -86,7 +86,7 @@ public class ExpressionParser {
 	 * @param types Accepted return types of parsed expressions.
 	 * @return The parse results, or an empty array if parsing failed.
 	 */
-	public Result[] parse(byte[] input, int start, SkriptType[] types) {
+	public Result[] parse(byte[] input, int start, SkriptType... types) {
 		// Try literal parsing first
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result result = parser.parse(input, start);
