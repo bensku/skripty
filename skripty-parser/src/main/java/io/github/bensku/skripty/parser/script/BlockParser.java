@@ -70,11 +70,7 @@ public class BlockParser {
 			// Parse this node
 			String line = source.substring(nodeStart, nodeEnd);
 			SourceNode node;
-			if (indentation > sectionIndent) { // Append this to previous line
-				SourceNode.Statement previous = (SourceNode.Statement) nodes[nodeCount - 1];
-				nodes[nodeCount - 1] = new SourceNode.Statement(previous.getText() + " " + source.substring(nodeStart, nodeEnd));
-				continue; // No new node to be added
-			} else if (line.endsWith(":")) { // New section
+			if (line.endsWith(":")) { // New section
 				node = parse(source, end, line.substring(0, line.length() - 1));
 				end = end + node.length() - 1; // Skip over it here
 			} else { // Statement in current section
