@@ -1,0 +1,19 @@
+first title:
+    first statement
+    
+    second statement
+
+    third
+      statement
+    
+    fourth statement
+    
+second title:
+	nested title:
+		second-innermost first
+		very nested title:
+			innermost statement
+		
+		second-innermost second
+			
+last statement
