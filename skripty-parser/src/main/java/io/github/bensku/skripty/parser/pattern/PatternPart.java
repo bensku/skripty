@@ -2,8 +2,6 @@ package io.github.bensku.skripty.parser.pattern;
 
 import java.nio.charset.StandardCharsets;
 
-import io.github.bensku.skripty.core.SkriptType;
-
 /**
  * Part of {@link Pattern}
  *
@@ -38,25 +36,15 @@ public interface PatternPart {
 	class Input implements PatternPart {
 		
 		/**
-		 * Types accepted by this input slot.
-		 */
-		private final SkriptType[] types;
-		
-		/**
-		 * Index of this input.
+		 * Index that this input gets mapped to.
 		 */
 		private final int index;
 
-		Input(SkriptType[] inputTypes, int index) {
-			this.types = inputTypes;
+		Input(int index) {
 			this.index = index;
 		}
-
-		public SkriptType[] getTypes() {
-			return types;
-		}
 		
-		public int getIndex() {
+		public int getSlot() {
 			return index;
 		}
 

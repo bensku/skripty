@@ -1,0 +1,26 @@
+package io.github.bensku.skripty.parser.test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.Test;
+
+import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.expression.ConstantExpression;
+import io.github.bensku.skripty.core.expression.ExpressionRegistry;
+import io.github.bensku.skripty.parser.expression.ExpressionLayer;
+import io.github.bensku.skripty.parser.pattern.Pattern;
+
+public class ExpressionLayerTest {
+
+	private ExpressionRegistry registry = new ExpressionRegistry();
+	
+	@Test
+	public void lookup() {
+		ExpressionLayer layer = new ExpressionLayer();
+		ConstantExpression nullExpr = registry.makeConstant(SkriptType.create(Object.class), null);
+		layer.register(nullExpr, Pattern.create("null"));
+		assertEquals(nullExpr, layer.lookupFirst("null".getBytes(StandardCharsets.UTF_8), 0)[0].getExpression());
+	}
+}

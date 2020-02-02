@@ -46,7 +46,7 @@ public class ExpressionParserTest {
 		
 		ExpressionLayer basicLayer = new ExpressionLayer();
 		basicLayer.register(constantHello, Pattern.create("greeting"));
-		basicLayer.register(exprSay, Pattern.create("say ", new InputType(false, stringType)));
+		basicLayer.register(exprSay, Pattern.create("say ", 0));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);

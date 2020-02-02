@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.expression.InputType;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
 import io.github.bensku.skripty.parser.util.ArrayHelpers;
@@ -206,8 +207,10 @@ public class ExpressionParser {
 			ExpressionInfo info = candidates[i];
 			Pattern pattern = info.getPattern();
 			
-			assert pattern.partAt(0) instanceof PatternPart.Input : "expression without first input in second tree";
-			if (!ArrayHelpers.contains(((PatternPart.Input) pattern.partAt(0)).getTypes(), firstType)) {
+			// Filter based on return type of expression we already have
+			int inputSlot = ((PatternPart.Input) pattern.partAt(0)).getSlot();
+			InputType inputType = info.getExpression().getInputType(inputSlot);
+			if (!ArrayHelpers.contains(inputType.getTypes(), firstType)) {
 				continue; // Doesn't accept our type as argument
 			}
 
@@ -260,11 +263,11 @@ public class ExpressionParser {
 				pos += text.length;
 			} else {
 				// Figure out the index we'll place this in inputs array
-				// TODO customizable input placement
-				int inputIndex = ((PatternPart.Input) part).getIndex();
+				int inputSlot = ((PatternPart.Input) part).getSlot();
 				
 				// Get potential inputs
-				Result[] potentialInputs = parse(input, pos, ((PatternPart.Input) part).getTypes());
+				InputType inputType = info.getExpression().getInputType(inputSlot);
+				Result[] potentialInputs = parse(input, pos, inputType.getTypes());
 				
 				// Evaluate whether or not we can parse parts of this expression
 				// AFTER this input, should it be used
@@ -272,7 +275,7 @@ public class ExpressionParser {
 					Result after = matchPattern(info, i + 1, input, result.getEnd());
 					if (after != null) {
 						// Assign this as input
-						inputs[inputIndex] = result.getNode();
+						inputs[inputSlot] = result.getNode();
 						// Recursive matchPattern() call has set the subsequent inputs (if any) for us
 						pos = after.getEnd(); // Skip ahead what was recursively parsed
 						break partsLoop; // goto return success

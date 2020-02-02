@@ -21,7 +21,6 @@ public class Pattern {
 	 */
 	public static Pattern create(Object... parts) {
 		PatternPart[] doneParts = new PatternPart[parts.length];
-		int inputIndex = 0;
 		for (int i = 0; i < parts.length; i++) {
 			Object p = parts[i];
 			if (p instanceof String) {
@@ -29,11 +28,13 @@ public class Pattern {
 					throw new IllegalArgumentException("consecutive string parts");
 				}
 				doneParts[i] = new PatternPart.Literal((String) p);
-			} else if (p instanceof InputType) {
+			} else if (p instanceof Integer) {
 				if (i == 1 && !(parts[i - 1] instanceof String)) {
 					throw new IllegalArgumentException("first and second both inputs");
 				}
-				doneParts[i] = new PatternPart.Input(((InputType) p).getTypes(), inputIndex++);
+				doneParts[i] = new PatternPart.Input((int) p);
+			} else {
+				throw new IllegalArgumentException("parts must be strings or input indices");
 			}
 		}
 		

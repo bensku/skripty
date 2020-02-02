@@ -34,9 +34,29 @@ public class ExpressionLayer {
 	 * Registers a pattern for an expression.
 	 * @param expression An expression.
 	 * @param pattern Pattern that can be used for it.
+	 * @throws IllegalArgumentException If the pattern is not valid for given
+	 * expression, for example because it is missing inputs.
 	 */
 	public void register(Expression expression, Pattern pattern) {
 		PatternPart first = pattern.partAt(0);
+		
+		// Validate that pattern contains all required inputs and doesn't have duplicate inputs
+		boolean[] foundInputs = new boolean[expression.getInputCount()];
+		for (int i = 0; i < pattern.length(); i++) {
+			PatternPart part = pattern.partAt(i);
+			if (part instanceof PatternPart.Input) {
+				int inputSlot = ((PatternPart.Input) part).getSlot();
+				if (foundInputs[inputSlot]) {
+					throw new IllegalArgumentException("pattern has duplicate input for slot " + i);
+				}
+				foundInputs[inputSlot] = true;
+			}
+		}
+		for (int i = 0; i < foundInputs.length; i++) {
+			if (!foundInputs[i] && !expression.getInputType(i).isOptional()) {
+				throw new IllegalArgumentException("pattern is missing required input for slot " + i);
+			}
+		}
 		
 		ExpressionInfo info = new ExpressionInfo(pattern, expression);
 		if (first instanceof PatternPart.Literal) {

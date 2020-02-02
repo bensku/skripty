@@ -35,6 +35,10 @@ public abstract class Expression {
 	 */
 	public abstract InputType[] getInputTypes();
 	
+	public InputType getInputType(int index) {
+		return getInputTypes()[index];
+	}
+	
 	public int getInputCount() {
 		return getInputTypes().length;
 	}
