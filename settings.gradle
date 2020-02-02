@@ -1,1 +1,2 @@
+include 'skripty-runtime'
 include 'skripty-parser'
