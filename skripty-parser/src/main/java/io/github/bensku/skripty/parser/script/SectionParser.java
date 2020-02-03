@@ -1,5 +1,10 @@
 package io.github.bensku.skripty.parser.script;
 
+/**
+ * Parses script source code into a tree of source nodes. No expressions are
+ * parsed here.
+ *
+ */
 public class SectionParser {
 	
 	/**

@@ -24,7 +24,7 @@ public class ScriptBlock implements ScriptUnit {
 		this.units = units;
 	}
 
-	public AstNode getTitleExpr() {
+	public AstNode.Expr getTitleExpr() {
 		return titleExpr;
 	}
 
