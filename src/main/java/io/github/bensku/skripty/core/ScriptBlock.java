@@ -6,7 +6,7 @@ import io.github.bensku.skripty.core.flow.ScopeEntry;
  * Represents a block of script code.
  *
  */
-public class ScriptBlock implements ParsedScript.Entry {
+public class ScriptBlock implements ScriptUnit {
 
 	/**
 	 * AST node of title expression of this block. The expression should return
@@ -15,21 +15,21 @@ public class ScriptBlock implements ParsedScript.Entry {
 	private final AstNode.Expr titleExpr;
 	
 	/**
-	 * Entries in this block.
+	 * Units in this block.
 	 */
-	private final ParsedScript.Entry[] entries;
+	private final ScriptUnit[] units;
 	
-	public ScriptBlock(AstNode.Expr titleExpr, ParsedScript.Entry[] entries) {
+	public ScriptBlock(AstNode.Expr titleExpr, ScriptUnit[] units) {
 		this.titleExpr = titleExpr;
-		this.entries = entries;
+		this.units = units;
 	}
 
 	public AstNode getTitleExpr() {
 		return titleExpr;
 	}
 
-	public ParsedScript.Entry[] getEntries() {
-		return entries;
+	public ScriptUnit[] getUnits() {
+		return units;
 	}
 	
 }

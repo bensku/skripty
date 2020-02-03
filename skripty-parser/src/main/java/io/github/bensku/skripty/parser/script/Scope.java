@@ -39,19 +39,19 @@ public class Scope {
 		/**
 		 * Node of title expression of the inner scope.
 		 */
-		private final AstNode title;
+		private final AstNode.Expr title;
 
 		/**
 		 * The inner scope definition.
 		 */
 		private final Scope scope;
 
-		private ParseResult(AstNode title, Scope scope) {
+		private ParseResult(AstNode.Expr title, Scope scope) {
 			this.title = title;
 			this.scope = scope;
 		}
 
-		public AstNode getTitle() {
+		public AstNode.Expr getTitle() {
 			return title;
 		}
 
@@ -67,14 +67,15 @@ public class Scope {
 			// TODO error handling :)
 		}
 		AstNode node = results[0].getNode();
-		return new ParseResult(results[0].getNode(), scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
+		return new ParseResult((AstNode.Expr) results[0].getNode(), scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
 	}
 	
-	public AstNode parseStatement(String statement) {
+	public AstNode.Expr parseStatement(String statement) {
 		ExpressionParser.Result[] results = statementParser.parse(statement.getBytes(StandardCharsets.UTF_8), 0, SkriptType.VOID);
 		if (results.length == 0) {
 			// TODO error handling :)
 		}
-		return results[0].getNode();
+		// TODO what if parser gives us a literal? are literals with VOID return type allowed?
+		return (AstNode.Expr) results[0].getNode();
 	}
 }
