@@ -87,18 +87,26 @@ public class ExpressionParser {
 	 * @return The parse results, or an empty array if parsing failed.
 	 */
 	public Result[] parse(byte[] input, int start, SkriptType... types) {
-		// Try literal parsing first
-		for (LiteralParser parser : literalParsers) {
-			LiteralParser.Result result = parser.parse(input, start);
-			if (result != null) {
-				AstNode node = new AstNode.Literal(result.getValue());
-				return new Result[] {new Result(node, result.getEnd(), result.getType())};
-			}
-		}
-		
-		// If it fails, parse expressions instead
 		Result[] tempResults = new Result[PARSE_MAX_RESULTS]; // TODO try to guess result count instead
 		int resultCount = 0;
+		
+		// Try literal parsing first
+		for (LiteralParser parser : literalParsers) {
+			LiteralParser.Result literal = parser.parse(input, start);
+			if (literal != null) { // This is a literal!
+				AstNode node = new AstNode.Literal(literal.getValue());
+				Result result = new Result(node, literal.getEnd(), literal.getType());
+				tempResults[resultCount++] = result;
+				
+				// Even though result is literal, it could be used as input to something else
+				resultCount = wrapAsFirstInput(input, tempResults, resultCount, result, types);
+				
+				// Early return, a matching literal overrides any and all expressions with similar syntaxes
+				Result[] allResults = new Result[resultCount];
+				System.arraycopy(tempResults, 0, allResults, 0, resultCount);
+				return allResults;
+			}
+		}
 		
 		// Search expressions from each layer
 		for (ExpressionLayer layer : expressions) {
@@ -114,7 +122,7 @@ public class ExpressionParser {
 				}
 				
 				// Try using it as first input to expressions
-				wrapAsFirstInput(input, tempResults, resultCount, result, types);
+				resultCount = wrapAsFirstInput(input, tempResults, resultCount, result, types);
 			}
 		}
 		
