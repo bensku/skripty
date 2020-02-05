@@ -8,6 +8,61 @@ import io.github.bensku.skripty.core.expression.InputType;
  */
 public class Pattern {
 	
+	private static final int BASE_10 = 10;
+	
+	/**
+	 * Parses a pattern from a string.
+	 * @param pattern Pattern string.
+	 * @return A pattern.
+	 * @throws IllegalArgumentException When the string is not properly
+	 * formatted, or would cause an invalid pattern to be created.
+	 */
+	public static Pattern parse(String pattern) {
+		// Count inputs and literals
+		int inputs = 0;
+		int literals = 0;
+		int i = 0;
+		while (true) {
+			int inputBegin = pattern.indexOf('{', i);
+			if (inputBegin == -1) {
+				break;
+			} else if (i < inputBegin) {
+				literals++;
+			}
+			int inputEnd = pattern.indexOf('}', inputBegin);
+			if (inputEnd == -1) {
+				throw new IllegalArgumentException("input at " + inputBegin + " was not closed");
+			}
+			
+			inputs++;
+			i = inputEnd + 1;
+		}
+		if (i != pattern.length()) {
+			literals++;
+		}
+		
+		// Create parts of them
+		Object[] parts = new Object[inputs + literals];
+		int partCount = 0;
+		i = 0;
+		while (true) {
+			int inputBegin = pattern.indexOf('{', i);
+			if (inputBegin == -1) {
+				break;
+			} else if (i < inputBegin) {
+				parts[partCount++] = pattern.substring(i, inputBegin);
+			}
+			int inputEnd = pattern.indexOf('}', inputBegin);
+			parts[partCount++] = Integer.parseInt(pattern, inputBegin + 1, inputEnd, BASE_10);
+			i = inputEnd + 1;
+		}
+		if (i != pattern.length()) {
+			parts[partCount++] = pattern.substring(i);
+		}
+		
+		return Pattern.create(parts);
+	}
+	
 	/**
 	 * Creates a new pattern from {@link String literal parts} and
 	 * {@link InputType inputs}.

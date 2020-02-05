@@ -14,10 +14,10 @@ public class PatternTest {
 
 	@Test
 	public void validPatterns() {
-		Pattern p1 = Pattern.create("test", 0, "pattern");
-		assertEquals("test", new String(((PatternPart.Literal) p1.partAt(0)).getText(), StandardCharsets.UTF_8));
+		Pattern p1 = Pattern.create("test ", 0, " pattern");
+		assertEquals("test ", new String(((PatternPart.Literal) p1.partAt(0)).getText(), StandardCharsets.UTF_8));
 		assertEquals(0, ((PatternPart.Input) p1.partAt(1)).getSlot());
-		assertEquals("pattern", new String(((PatternPart.Literal) p1.partAt(2)).getText(), StandardCharsets.UTF_8));
+		assertEquals(" pattern", new String(((PatternPart.Literal) p1.partAt(2)).getText(), StandardCharsets.UTF_8));
 		
 		Pattern.create("test", 0, 1); // Shouldn't throw IAE, first part is literal!
 		Pattern.create(0, "test", 1); // Second part literal
@@ -27,5 +27,16 @@ public class PatternTest {
 	public void faultyPatterns() {
 		assertThrows(IllegalArgumentException.class, () -> Pattern.create("abc", "def"));
 		assertThrows(IllegalArgumentException.class, () -> Pattern.create(0, 1));
+	}
+	
+	@Test
+	public void parsedPatterns() {
+		Pattern p1 = Pattern.parse("test {0} pattern");
+		assertEquals("test ", new String(((PatternPart.Literal) p1.partAt(0)).getText(), StandardCharsets.UTF_8));
+		assertEquals(0, ((PatternPart.Input) p1.partAt(1)).getSlot());
+		assertEquals(" pattern", new String(((PatternPart.Literal) p1.partAt(2)).getText(), StandardCharsets.UTF_8));
+		
+		Pattern.parse("test{0}{1}"); // Shouldn't throw IAE, first part is literal!
+		Pattern.create("{0}test{1}"); // Second part literal
 	}
 }
