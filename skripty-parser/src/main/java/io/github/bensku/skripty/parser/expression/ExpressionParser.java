@@ -94,7 +94,7 @@ public class ExpressionParser {
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result literal = parser.parse(input, start);
 			if (literal != null) { // This is a literal!
-				AstNode node = new AstNode.Literal(literal.getValue());
+				AstNode node = new AstNode.Literal(literal.getType(), literal.getValue());
 				Result result = new Result(node, literal.getEnd(), literal.getType());
 				tempResults[resultCount++] = result;
 				

@@ -11,6 +11,8 @@ import io.github.bensku.skripty.core.ScriptBlock;
  */
 public class IrNode {
 
+	private IrNode() {}
+	
 	/**
 	 * Loads a constant value to stack.
 	 *

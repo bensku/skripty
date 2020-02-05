@@ -6,21 +6,34 @@ import io.github.bensku.skripty.core.expression.Expression;
  * An abstract syntax tree node that represents a single expression.
  *
  */
-public class AstNode {
+public abstract class AstNode {
+	
+	public abstract SkriptType getReturnType();
 	
 	public static class Literal extends AstNode {
+		
+		/**
+		 * Type of the value, as exposed to scripts.
+		 */
+		private final SkriptType type;
 		
 		/**
 		 * The literal value.
 		 */
 		private final Object value;
 		
-		public Literal(Object value) {
+		public Literal(SkriptType type, Object value) {
+			this.type = type;
 			this.value = value;
 		}
 
 		public Object getValue() {
 			return value;
+		}
+
+		@Override
+		public SkriptType getReturnType() {
+			return type;
 		}
 	}
 	
@@ -51,6 +64,11 @@ public class AstNode {
 
 		public AstNode[] getInputs() {
 			return inputs;
+		}
+
+		@Override
+		public SkriptType getReturnType() {
+			return expression.getReturnType();
 		}
 	}
 	
