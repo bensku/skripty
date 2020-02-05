@@ -38,14 +38,14 @@ public class IrNode {
 	 * Superclass of different method call nodes.
 	 *
 	 */
-	private static class CallMethod extends IrNode {
+	public static class CallMethod extends IrNode {
 		
 		/**
 		 * Handle of method that we're going to invoke.
 		 */
 		private final MethodHandle handle;
 		
-		public CallMethod(MethodHandle handle) {
+		private CallMethod(MethodHandle handle) {
 			this.handle = handle;
 		}
 		
