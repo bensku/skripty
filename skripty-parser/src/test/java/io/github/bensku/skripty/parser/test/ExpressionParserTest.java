@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.parser.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 
@@ -28,12 +29,18 @@ public class ExpressionParserTest {
 	
 	private Expression constantHello;
 	private Expression exprSay;
+	private Expression exprShouted;
 	
 	@BeforeEach
 	public void initExpressions() {
 		ExpressionRegistry registry = new ExpressionRegistry();
 		constantHello = registry.makeConstant(stringType, "Hello, world!");
 		exprSay = registry.makeCallable(this)
+				.inputTypes(new InputType(true, stringType))
+				.returnType(stringType)
+				.callTargets()
+				.create();
+		exprShouted = registry.makeCallable(this)
 				.inputTypes(new InputType(true, stringType))
 				.returnType(stringType)
 				.callTargets()
@@ -47,6 +54,7 @@ public class ExpressionParserTest {
 		ExpressionLayer basicLayer = new ExpressionLayer();
 		basicLayer.register(constantHello, Pattern.create("greeting"));
 		basicLayer.register(exprSay, Pattern.create("say ", 0));
+		basicLayer.register(exprShouted, Pattern.create(0, " shouted"));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);
@@ -56,10 +64,16 @@ public class ExpressionParserTest {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
 		ExpressionParser.Result[] results = parser.parse(bytes, 0, new SkriptType[] {expected.getReturnType()});
 		
-		assertEquals(1, results.length);
-		assertEquals(bytes.length, results[0].getEnd());
-		AstNode.Expr node = (AstNode.Expr) results[0].getNode();
-		assertEquals(expected, node.getExpression());
+		for (ExpressionParser.Result result : results) {
+			if (bytes.length == result.getEnd()) {
+				AstNode.Expr node = (AstNode.Expr) result.getNode();
+				assertEquals(expected, node.getExpression());
+				return;
+			}
+		}
+		
+		assertTrue(false, "results did not contain expected expression");
+
 	}
 	
 	@Test
@@ -75,5 +89,12 @@ public class ExpressionParserTest {
 	@Test
 	public void recursiveSay() {
 		parseAll("say say say greeting", exprSay);
+	}
+	
+	@Test
+	public void reverseSay() {
+		parseAll("greeting shouted", exprShouted);
+		parseAll("say greeting shouted", exprShouted);
+		parseAll("say greeting shouted shouted", exprShouted);
 	}
 }
