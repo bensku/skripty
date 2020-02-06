@@ -21,7 +21,7 @@ public class ExpressionLayer {
 	 * @param registry Expression registry.
 	 * @return An expression layer.
 	 */
-	public ExpressionLayer forAnnotatedRegistry(ExpressionRegistry registry) {
+	public static ExpressionLayer forAnnotatedRegistry(ExpressionRegistry registry) {
 		ExpressionLayer layer = new ExpressionLayer();
 		registry.forEach(expr -> {
 			if (expr instanceof CallableExpression) {

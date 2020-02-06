@@ -58,7 +58,7 @@ public class ExpressionRegistry {
 	 * @throws IllegalArgumentException If required annotations are missing, or
 	 * their values are incorrect.
 	 */
-	public CallableExpression makeCallableAnnotated(Class<?> typeSystem, Object instance) {
+	public CallableExpression makeCallable(Class<?> typeSystem, Object instance) {
 		Class<?> impl = instance.getClass();
 		
 		// Input types
@@ -77,7 +77,7 @@ public class ExpressionRegistry {
 			}
 			
 			// Go through all accepted input types
-			String[] options = inputStrs[i].split("/");
+			String[] options = slotDesc.split("/");
 			SkriptType[] types = new SkriptType[options.length];
 			for (int j = 0; j < types.length; j++) {
 				types[j] = resolveType(typeSystem, options[i]);
