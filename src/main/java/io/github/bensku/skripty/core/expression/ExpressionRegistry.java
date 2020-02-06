@@ -108,7 +108,7 @@ public class ExpressionRegistry {
 			}
 		}
 		
-		MethodHandle[] targets = new MethodHandle[callTargets.length];
+		MethodHandle[] targets = new MethodHandle[targetCount];
 		System.arraycopy(callTargets, 0, targets, 0, targetCount);
 		return makeCallable(instance)
 				.inputTypes(inputs)
