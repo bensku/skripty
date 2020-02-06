@@ -268,12 +268,11 @@ public class RadixTree<T> {
 			} else { // Link to some other expression
 				DataEntry<T> before = firstEntry;
 				// Go forward to find expression before this one
-				while (before.index < globalIndex && before.after != null) {
+				while (before.index < globalIndex) {
+					if (before.after == null || before.after.index > globalIndex) {
+						break;
+					}
 					before = before.after;
-				}
-				// Went too far, take one step back
-				if (before.index > globalIndex) {
-					before = before.before;
 				}
 				if (before.after == null) {
 					lastEntry = entry; // This is now last expression in node
