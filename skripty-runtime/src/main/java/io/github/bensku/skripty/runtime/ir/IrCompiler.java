@@ -28,6 +28,11 @@ public class IrCompiler {
 		return block;
 	}
 	
+	/**
+	 * Compiles a source block.
+	 * @param block Target IR block.
+	 * @param source Source block.
+	 */
 	private void compile(IrBlock block, ScriptBlock source) {
 		int start = block.size();
 		
@@ -52,6 +57,11 @@ public class IrCompiler {
 		}
 	}
 	
+	/**
+	 * Emits one {@link Unit unit} of a source block.
+	 * @param block Target IR.
+	 * @param unit Script unit.
+	 */
 	private void emitUnit(IrBlock block, ScriptUnit unit) {
 		if (unit instanceof ScriptBlock) { // Flatten block in block
 			compile(block, (ScriptBlock) unit);
@@ -60,6 +70,11 @@ public class IrCompiler {
 		}
 	}
 	
+	/**
+	 * Emits an expression node.
+	 * @param block Target IR.
+	 * @param node Expression AST node.
+	 */
 	private void emitNode(IrBlock block, AstNode.Expr node) {
 		AstNode[] inputs = node.getInputs();
 		Class<?>[] inputClasses = new Class[inputs.length];
@@ -81,6 +96,12 @@ public class IrCompiler {
 		emitExpression(block, node.getExpression(), inputClasses);
 	}
 	
+	/**
+	 * Emits an expression.
+	 * @param block Target IR.
+	 * @param expr Expression to emit.
+	 * @param inputClasses Classes of inputs given to the expression.
+	 */
 	private void emitExpression(IrBlock block, Expression expr, Class<?>[] inputClasses) {
 		if (expr instanceof ConstantExpression) { // Constant expression -> constant
 			// Do not allocate unnecessary vararg array

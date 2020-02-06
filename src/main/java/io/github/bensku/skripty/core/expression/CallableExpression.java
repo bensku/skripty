@@ -48,6 +48,11 @@ public class CallableExpression extends Expression {
 			return expr;
 		}
 	}
+	
+	/**
+	 * Instance of the object call targets of this expression are bound to.
+	 */
+	private final Object instance;
 
 	/**
 	 * Types of the inputs that this expression takes.
@@ -69,6 +74,7 @@ public class CallableExpression extends Expression {
 	private CallableExpression(int id, Object instance, InputType[] inputTypes, SkriptType returnType,
 			MethodHandle[] callTargets) {
 		super(id);
+		this.instance = instance;
 		this.inputTypes = inputTypes;
 		this.returnType = returnType;
 		this.callTargets = callTargets;
@@ -100,6 +106,10 @@ public class CallableExpression extends Expression {
 	@Override
 	public SkriptType getReturnType() {
 		return returnType;
+	}
+	
+	public Object getInstance() {
+		return instance;
 	}
 
 	/**

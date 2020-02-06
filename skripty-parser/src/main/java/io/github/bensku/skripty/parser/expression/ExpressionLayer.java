@@ -1,6 +1,8 @@
 package io.github.bensku.skripty.parser.expression;
 
+import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.Expression;
+import io.github.bensku.skripty.core.expression.ExpressionRegistry;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 import io.github.bensku.skripty.parser.pattern.PatternPart;
 import io.github.bensku.skripty.parser.util.RadixTree;
@@ -12,6 +14,30 @@ import io.github.bensku.skripty.parser.util.RadixTree;
  *
  */
 public class ExpressionLayer {
+	
+	/**
+	 * Creates an expression layer for expressions defined using the annotation
+	 * based API. 
+	 * @param registry Expression registry.
+	 * @return An expression layer.
+	 */
+	public ExpressionLayer forAnnotatedRegistry(ExpressionRegistry registry) {
+		ExpressionLayer layer = new ExpressionLayer();
+		registry.forEach(expr -> {
+			if (expr instanceof CallableExpression) {
+				Class<?> implClass = ((CallableExpression) expr).getInstance().getClass();
+				io.github.bensku.skripty.parser.annotation.Pattern p = implClass
+						.getAnnotation(io.github.bensku.skripty.parser.annotation.Pattern.class);
+				if (p == null) {
+					// TODO missing pattern, what do we do
+					return; // Ignore for now
+				}
+				
+				layer.register(expr, Pattern.parse(p.value()));
+			}
+		});
+		return layer;
+	}
 
 	/**
 	 * Expressions by their first parts. Those that do not start with a literal
