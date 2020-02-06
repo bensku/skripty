@@ -34,6 +34,7 @@ allprojects {
 	checkstyle {
 		toolVersion = '8.29'
 		checkstyleTest.enabled = false // No style checking for unit tests, for now
+		checkstyleJmh.enabled = false
 	}
 }
 
