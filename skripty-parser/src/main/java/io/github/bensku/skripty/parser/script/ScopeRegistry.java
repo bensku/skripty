@@ -8,6 +8,11 @@ import io.github.bensku.skripty.core.expression.ExpressionRegistry;
  *
  */
 public class ScopeRegistry {
+	
+	/**
+	 * The expression registry this was created from.
+	 */
+	private final ExpressionRegistry expressions;
 
 	/**
 	 * The scopes.
@@ -20,7 +25,16 @@ public class ScopeRegistry {
 	 * It must contain no other expressions.
 	 */
 	public ScopeRegistry(ExpressionRegistry expressions) {
+		this.expressions = expressions;
 		this.scopes = new Scope[expressions.getExpressionCount()];
+	}
+	
+	/**
+	 * Gets the expression registry this was built from.
+	 * @return An expression registry.
+	 */
+	public ExpressionRegistry getExpressions() {
+		return expressions;
 	}
 	
 	public void register(Expression expression, Scope scope) {

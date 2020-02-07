@@ -3,6 +3,7 @@ package io.github.bensku.skripty.parser.script;
 import java.nio.charset.StandardCharsets;
 
 import io.github.bensku.skripty.core.AstNode;
+import io.github.bensku.skripty.core.AstNode.Expr;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
@@ -71,11 +72,17 @@ public class Scope {
 	}
 	
 	public AstNode.Expr parseStatement(String statement) {
-		ExpressionParser.Result[] results = statementParser.parse(statement.getBytes(StandardCharsets.UTF_8), 0, SkriptType.VOID);
+		byte[] bytes = statement.getBytes(StandardCharsets.UTF_8);
+		ExpressionParser.Result[] results = statementParser.parse(bytes, 0, SkriptType.VOID);
 		if (results.length == 0) {
 			// TODO error handling :)
 		}
-		// TODO what if parser gives us a literal? are literals with VOID return type allowed?
-		return (AstNode.Expr) results[0].getNode();
+		for (ExpressionParser.Result result : results) {
+			if (result.getEnd() == bytes.length) {
+				return (Expr) result.getNode();
+			}
+		}
+		// TODO error handling :)
+		throw new AssertionError();
 	}
 }

@@ -33,7 +33,7 @@ public class ExpressionParser {
 	 */
 	private final ExpressionLayer[] expressions;
 
-	public ExpressionParser(LiteralParser[] literalParsers, ExpressionLayer[] expressions) {
+	public ExpressionParser(LiteralParser[] literalParsers, ExpressionLayer... expressions) {
 		this.literalParsers = literalParsers;
 		this.expressions = expressions;
 	}

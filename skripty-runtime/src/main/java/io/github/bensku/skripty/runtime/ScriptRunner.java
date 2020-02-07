@@ -22,7 +22,7 @@ public class ScriptRunner {
 	 */
 	private final int stackSize;
 	
-	private ScriptRunner(Supplier<RunnerState> stateSupplier, int stackSize) {
+	public ScriptRunner(Supplier<RunnerState> stateSupplier, int stackSize) {
 		this.stateSupplier = stateSupplier;
 		this.stackSize = stackSize;
 	}
