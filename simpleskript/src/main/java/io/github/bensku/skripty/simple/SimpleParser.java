@@ -21,21 +21,19 @@ public class SimpleParser {
 	// Script-level parsers
 	private final SectionParser sectionParser;
 	private final BlockParser blockParser;
-	
-	private final Scope rootScope;
-	
+		
 	public SimpleParser() {
 		this.sectionParser = new SectionParser();
-		this.blockParser = new BlockParser();
 		
 		LiteralParser[] literalParsers = literalParsers();
 		ExpressionParser exprParser = new ExpressionParser(literalParsers,
 				ExpressionLayer.forAnnotatedRegistry(expressions()));
 		
 		ScopeRegistry scopes = scopes();
-		this.rootScope = new Scope(new ExpressionParser(literalParsers,
+		Scope rootScope = new Scope(new ExpressionParser(literalParsers,
 				ExpressionLayer.forAnnotatedRegistry(scopes.getExpressions())), scopes,
 				exprParser);
+		this.blockParser = new BlockParser(rootScope);
 	}
 	
 	private LiteralParser[] literalParsers() {

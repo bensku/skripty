@@ -14,7 +14,11 @@ public class BlockParser {
 	 * The scope to use for parsing {@link SourceNode source nodes} at root of
 	 * blocks.
 	 */
-	private Scope rootScope;
+	private final Scope rootScope;
+	
+	public BlockParser(Scope rootScope) {
+		this.rootScope = rootScope;
+	}
 	
 	/**
 	 * Parses a source section and all its subsections into a source block.
