@@ -54,4 +54,15 @@ public class ScriptStack {
 		System.arraycopy(slots, this.size - length, slice, 0, length);
 		return slice;
 	}
+	
+	/**
+	 * Pops many values from top of this stack.
+	 * @param count How many values to pop.
+	 * @return The popped values.
+	 */
+	public Object[] pop(int count) {
+		Object[] slice = slice(count);
+		size -= count;
+		return slice;
+	}
 }

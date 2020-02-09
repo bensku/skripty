@@ -1,4 +1,4 @@
-package skriptyio.github.bensku.skripty.core.test;
+package io.github.bensku.skripty.core.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -10,6 +10,7 @@ import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
+import io.github.bensku.skripty.core.expression.InputType;
 
 public class ExpressionRegistryTest {
 	
@@ -20,7 +21,7 @@ public class ExpressionRegistryTest {
 
 	private ExpressionRegistry registry = new ExpressionRegistry();
 	
-	@Inputs({"foo", "bar/bar?"})
+	@Inputs({"foo", "foo/bar?"})
 	@Returns("foo")
 	public static class TestExpr {
 		
@@ -38,6 +39,10 @@ public class ExpressionRegistryTest {
 	@Test
 	public void annotatedCallable() {
 		CallableExpression expr = registry.makeCallable(getClass(), new TestExpr());
+		InputType[] inputs = expr.getInputTypes();
+		assertEquals(FOO, inputs[0].getTypes()[0]);
+		assertEquals(FOO, inputs[1].getTypes()[0]);
+		assertEquals(BAR, inputs[1].getTypes()[1]);
 		assertEquals(FOO, expr.getReturnType());
 		assertEquals("alphabeta", expr.call("alpha", "beta"));
 		assertEquals("fooalpha", expr.call("alpha"));

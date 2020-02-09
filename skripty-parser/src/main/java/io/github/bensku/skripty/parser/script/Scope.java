@@ -1,9 +1,9 @@
 package io.github.bensku.skripty.parser.script;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import io.github.bensku.skripty.core.AstNode;
-import io.github.bensku.skripty.core.AstNode.Expr;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
@@ -79,7 +79,7 @@ public class Scope {
 		}
 		for (ExpressionParser.Result result : results) {
 			if (result.getEnd() == bytes.length) {
-				return (Expr) result.getNode();
+				return (AstNode.Expr) result.getNode();
 			}
 		}
 		// TODO error handling :)

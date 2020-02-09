@@ -11,6 +11,9 @@ import io.github.bensku.skripty.parser.script.Scope;
 import io.github.bensku.skripty.parser.script.ScopeRegistry;
 import io.github.bensku.skripty.parser.script.SectionParser;
 import io.github.bensku.skripty.parser.script.SourceNode;
+import io.github.bensku.skripty.simple.expr.ExprCrash;
+import io.github.bensku.skripty.simple.expr.ExprPrint;
+import io.github.bensku.skripty.simple.expr.ExprTime;
 
 /**
  * Simply parses scripts by using the lower level APIs from other components.
@@ -50,7 +53,9 @@ public class SimpleParser {
 	
 	private ExpressionRegistry expressions() {
 		ExpressionRegistry exprs = new ExpressionRegistry();
-		
+		exprs.makeCallable(SimpleTypeSystem.class, new ExprCrash());
+		exprs.makeCallable(SimpleTypeSystem.class, new ExprPrint());
+		exprs.makeCallable(SimpleTypeSystem.class, new ExprTime());
 		
 		return exprs;
 	}

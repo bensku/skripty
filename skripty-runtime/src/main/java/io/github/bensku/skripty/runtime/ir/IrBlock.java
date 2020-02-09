@@ -70,4 +70,8 @@ public class IrBlock {
 		System.arraycopy(nodes, 0, results, 0, nodeCount);
 		return results;
 	}
+	
+	public IrNode[] nodeArray() {
+		return nodes;
+	}
 }

@@ -2,6 +2,7 @@ package io.github.bensku.skripty.simple;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Scanner;
 
 import io.github.bensku.skripty.runtime.ScriptRunner;
 import io.github.bensku.skripty.runtime.ir.IrCompiler;
@@ -19,9 +20,14 @@ public class Runner {
 		// We're not using script state for anything, but might do so in future
 		ScriptRunner runner = new ScriptRunner(() -> null, SCRIPT_STACK_SIZE);
 		
-		if (args.length == 0) {
-			System.err.println("REPL is not yet there");
-			System.exit(1);
+		if (args.length == 0) { // Launch a simple REPL
+			try (Scanner scan = new Scanner(System.in)) {
+				while (true) {
+					System.out.print("> ");
+					String line = scan.nextLine();
+					runner.run(compiler.compile(parser.parse(line)));
+				}
+			}
 		}
 		
 		// Assume all arguments are file names

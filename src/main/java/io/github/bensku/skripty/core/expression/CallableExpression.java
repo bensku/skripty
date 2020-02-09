@@ -38,6 +38,10 @@ public class CallableExpression extends Expression {
 		}
 		
 		public Builder callTargets(MethodHandle... targets) {
+			for (MethodHandle target : targets) { // Validate call targets
+				MethodType type = target.type();
+				// TODO return here after revisiting type system
+			}
 			this.callTargets = targets;
 			return this;
 		}

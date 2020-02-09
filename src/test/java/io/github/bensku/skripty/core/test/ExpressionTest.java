@@ -1,4 +1,4 @@
-package skriptyio.github.bensku.skripty.core.test;
+package io.github.bensku.skripty.core.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

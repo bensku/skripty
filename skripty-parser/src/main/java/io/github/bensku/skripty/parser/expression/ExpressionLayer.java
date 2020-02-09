@@ -30,6 +30,7 @@ public class ExpressionLayer {
 						.getAnnotation(io.github.bensku.skripty.parser.annotation.Pattern.class);
 				if (p == null) {
 					// TODO missing pattern, what do we do
+					System.out.println("WARN: ignoring missing pattern");
 					return; // Ignore for now
 				}
 				

@@ -111,12 +111,13 @@ public class IrCompiler {
 			MethodHandle handle = callable.findTarget(inputClasses, true);
 			if (handle != null) {
 				block.append(new IrNode.CallExact(handle));
+				return; // Do not emit TWO calls to same method
 			}
 			handle = callable.findTarget(inputClasses, false);
 			if (handle != null) {
 				block.append(new IrNode.CallVirtual(handle));
 			} else {
-				assert false : "call target not found"; // TODO handle this API usage error better
+				throw new AssertionError("call target not found"); // TODO handle this API usage error better
 			}
 		}
 	}
