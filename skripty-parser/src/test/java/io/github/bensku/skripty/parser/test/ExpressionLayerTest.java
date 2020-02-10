@@ -37,7 +37,7 @@ public class ExpressionLayerTest {
 	
 	@Inputs({})
 	@io.github.bensku.skripty.parser.annotation.Pattern("foo")
-	@Returns("void")
+	@Returns("bar")
 	public static class TestExpr {
 		
 		@CallTarget

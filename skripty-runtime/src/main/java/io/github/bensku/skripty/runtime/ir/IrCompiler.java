@@ -74,8 +74,9 @@ public class IrCompiler {
 	 * Emits an expression node.
 	 * @param block Target IR.
 	 * @param node Expression AST node.
+	 * @return Superclass of values this node returns.
 	 */
-	private void emitNode(IrBlock block, AstNode.Expr node) {
+	private Class<?> emitNode(IrBlock block, AstNode.Expr node) {
 		AstNode[] inputs = node.getInputs();
 		Class<?>[] inputClasses = new Class[inputs.length];
 		for (int i = 0; i < inputs.length; i++) { // Emit nodes that load inputs to stack
@@ -86,14 +87,16 @@ public class IrCompiler {
 				assert false : "class we're compiling IR for is not loaded"; // TODO API usage error, handle better
 			}
 			if (input instanceof AstNode.Literal) { // Literal -> constant
-				block.append(new IrNode.LoadConstant(((AstNode.Literal) input).getValue()));
+				Object constant = ((AstNode.Literal) input).getValue();
+				block.append(new IrNode.LoadConstant(constant));
+				inputClasses[i] = constant.getClass();
 			} else { // Handle expressions recursively
-				emitNode(block, (AstNode.Expr) input);
+				inputClasses[i] = emitNode(block, (AstNode.Expr) input);
 			}
 		}
 		
 		// Emit call to implementation of this node
-		emitExpression(block, node.getExpression(), inputClasses);
+		return emitExpression(block, node.getExpression(), inputClasses);
 	}
 	
 	/**
@@ -101,17 +104,20 @@ public class IrCompiler {
 	 * @param block Target IR.
 	 * @param expr Expression to emit.
 	 * @param inputClasses Classes of inputs given to the expression.
+	 * @return Superclass of values this expression returns.
 	 */
-	private void emitExpression(IrBlock block, Expression expr, Class<?>[] inputClasses) {
+	private Class<?> emitExpression(IrBlock block, Expression expr, Class<?>[] inputClasses) {
 		if (expr instanceof ConstantExpression) { // Constant expression -> constant
 			// Do not allocate unnecessary vararg array
-			block.append(new IrNode.LoadConstant(expr.call((Object[]) null)));
+			Object constant = expr.call((Object[]) null);
+			block.append(new IrNode.LoadConstant(constant));
+			return constant.getClass();
 		} else { // Resolve call target, emit call to it
 			CallableExpression callable = (CallableExpression) expr;
 			MethodHandle handle = callable.findTarget(inputClasses, true);
 			if (handle != null) {
 				block.append(new IrNode.CallExact(handle));
-				return; // Do not emit TWO calls to same method
+				return handle.type().returnType(); // Do not emit two calls to same method
 			}
 			handle = callable.findTarget(inputClasses, false);
 			if (handle != null) {
@@ -119,6 +125,7 @@ public class IrCompiler {
 			} else {
 				throw new AssertionError("call target not found"); // TODO handle this API usage error better
 			}
+			return handle.type().returnType();
 		}
 	}
 }

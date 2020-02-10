@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.core.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -56,5 +57,20 @@ public class ExpressionTest {
 		// And then that calling executes them, too
 		assertEquals("hello, world", expr.call());
 		assertEquals("abc", expr.call("abc"));
+	}
+	
+	@Test
+	public void builderErrors() throws NoSuchMethodException, IllegalAccessException {
+		MethodHandles.Lookup lookup = MethodHandles.lookup();
+		MethodHandle targetA = lookup.findVirtual(getClass(), "callTargetA", MethodType.methodType(Object.class));
+		MethodHandle targetB = lookup.findVirtual(getClass(), "callTargetB", MethodType.methodType(Object.class, String.class));
+		
+		assertThrows(IllegalStateException.class, () -> registry.makeCallable(this).callTargets());
+		assertThrows(IllegalArgumentException.class, () -> registry.makeCallable(this)
+				.inputTypes(new InputType(true, type), new InputType(false, type)));
+		assertThrows(IllegalArgumentException.class, () -> registry.makeCallable(this)
+				.inputTypes(new InputType(true, SkriptType.create(int.class)))
+				.returnType(SkriptType.VOID)
+				.callTargets(targetA, targetB));
 	}
 }

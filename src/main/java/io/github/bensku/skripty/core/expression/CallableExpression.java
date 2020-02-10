@@ -27,25 +27,91 @@ public class CallableExpression extends Expression {
 			this.instance = instance;
 		}
 		
+		/**
+		 * Sets types of inputs that the expression takes.
+		 * @param types Input types.
+		 * @return This builder.
+		 * @throws IllegalArgumentException When there are required inputs
+		 * after optional ones.
+		 */
 		public Builder inputTypes(InputType... types) {
+			// Check that there are no required inputs after optional ones
+			boolean hasOptional = false;
+			for (InputType type : types) {
+				if (!type.isOptional() && hasOptional) {
+					throw new IllegalArgumentException("required types must be before optional ones");
+				}
+				hasOptional = type.isOptional();
+			}
 			this.inputTypes = types;
 			return this;
 		}
 		
+		/**
+		 * Sets return type of the expression.
+		 * @param type Return type.
+		 * @return This builder.
+		 */
 		public Builder returnType(SkriptType type) {
 			this.returnType = type;
 			return this;
 		}
 		
+		/**
+		 * Sets call targets of the expression. One of then will be
+		 * called based on classes of actual inputs. This method must not be
+		 * called before both {@link #inputTypes(InputType...) input types} and
+		 * the {@link #returnType(SkriptType) return type} have been set.
+		 * @param targets Call targets.
+		 * @return This builder.
+		 * @throws IllegalArgumentException When one of given call targets does
+		 * would never be called, because its return type or parameter types
+		 * are incompatible with this expression's return type or input types.
+		 * @throws IllegalStateException When called too early.
+		 */
 		public Builder callTargets(MethodHandle... targets) {
-			for (MethodHandle target : targets) { // Validate call targets
+			if (inputTypes == null || returnType == null) {
+				throw new IllegalStateException("must specify input and return types before call targets");
+			}
+			
+			// Validate that the call targets match input and return types
+			for (MethodHandle target : targets) {
 				MethodType type = target.type();
-				// TODO return here after revisiting type system
+				// First parameter is 'this' of expression, skip it
+				for (int i = 1; i < type.parameterCount(); i++) {
+					Class<?> paramClass = type.parameterType(i);
+					// TODO if we inject more parameters to call targets, filter them here
+					
+					InputType input = inputTypes[i - 1];
+					for (SkriptType option : input.getTypes()) {
+						try {
+							if (!paramClass.isAssignableFrom(option.materialize().getBackingClass())) {
+								throw new IllegalArgumentException("input type of call target doesn't match");
+							}
+						} catch (ClassNotFoundException e) {
+							throw new IllegalArgumentException("failed to materialize input type", e);
+						}
+					}
+				}
+				
+				try {
+					if (!type.returnType().isAssignableFrom(returnType.materialize().getBackingClass())) {
+						throw new IllegalArgumentException("return type of call target doesn't match");
+					}
+				} catch (ClassNotFoundException e) {
+					throw new IllegalArgumentException("failed to materialize return type", e);
+				}
+				
 			}
 			this.callTargets = targets;
 			return this;
 		}
 		
+		/**
+		 * Creates a callable expression. This causes it to be registered to
+		 * the registry that created this builder.
+		 * @return The callable expression.
+		 */
 		public CallableExpression create() {
 			CallableExpression expr = new CallableExpression(id, instance, inputTypes, returnType, callTargets);
 			registry.addExpression(expr);
