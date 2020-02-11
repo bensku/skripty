@@ -37,6 +37,17 @@ public class ScriptStack {
 	}
 	
 	/**
+	 * Pops many values from top of this stack.
+	 * @param count How many values to pop.
+	 * @return The popped values.
+	 */
+	public Object[] pop(int count) {
+		Object[] slice = peek(count);
+		size -= count;
+		return slice;
+	}
+	
+	/**
 	 * Peeks at the top value of this stack without removing it.
 	 * @return Top value of the stack.
 	 */
@@ -49,20 +60,10 @@ public class ScriptStack {
 	 * @param length Size of the slice.
 	 * @return Slice of the stack.
 	 */
-	public Object[] slice(int length) {
+	public Object[] peek(int length) {
 		Object[] slice = new Object[length];
 		System.arraycopy(slots, this.size - length, slice, 0, length);
 		return slice;
 	}
-	
-	/**
-	 * Pops many values from top of this stack.
-	 * @param count How many values to pop.
-	 * @return The popped values.
-	 */
-	public Object[] pop(int count) {
-		Object[] slice = slice(count);
-		size -= count;
-		return slice;
-	}
+
 }
