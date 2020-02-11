@@ -1,27 +1,24 @@
 package io.github.bensku.skripty.simple.expr;
 
+import java.util.Objects;
+
 import io.github.bensku.skripty.core.annotation.CallTarget;
 import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 import io.github.bensku.skripty.parser.annotation.Pattern;
 
-@Inputs({"text/timestamp/boolean"})
-@Returns("void")
-@Pattern("print {0}")
-public class ExprPrint {
+@Inputs({"text/timestamp", "text/timestamp"})
+@Returns("boolean")
+@Pattern("{0} is {1}")
+public class ExprEquals {
 
 	@CallTarget
-	public void print(String str) {
-		System.out.println(str);
+	public boolean compare(String a, String b) {
+		return Objects.equals(a, b);
 	}
 	
 	@CallTarget
-	public void print(long l) {
-		System.out.println(l);
-	}
-	
-	@CallTarget
-	public void print(boolean b) {
-		System.out.println(b);
+	public boolean compare(long a, long b) {
+		return a == b;
 	}
 }

@@ -12,6 +12,7 @@ import io.github.bensku.skripty.parser.script.ScopeRegistry;
 import io.github.bensku.skripty.parser.script.SectionParser;
 import io.github.bensku.skripty.parser.script.SourceNode;
 import io.github.bensku.skripty.simple.expr.ExprCrash;
+import io.github.bensku.skripty.simple.expr.ExprEquals;
 import io.github.bensku.skripty.simple.expr.ExprPrint;
 import io.github.bensku.skripty.simple.expr.ExprTime;
 
@@ -53,9 +54,11 @@ public class SimpleParser {
 	
 	private ExpressionRegistry expressions() {
 		ExpressionRegistry exprs = new ExpressionRegistry();
-		exprs.makeCallable(SimpleTypeSystem.class, new ExprCrash());
-		exprs.makeCallable(SimpleTypeSystem.class, new ExprPrint());
-		exprs.makeCallable(SimpleTypeSystem.class, new ExprTime());
+		Class<?> types = SimpleTypeSystem.class;
+		exprs.makeCallable(types, new ExprCrash());
+		exprs.makeCallable(types, new ExprEquals());
+		exprs.makeCallable(types, new ExprPrint());
+		exprs.makeCallable(types, new ExprTime());
 		
 		return exprs;
 	}

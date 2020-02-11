@@ -83,20 +83,26 @@ public class CallableExpression extends Expression {
 					// TODO if we inject more parameters to call targets, filter them here
 					
 					InputType input = inputTypes[i - 1];
+					boolean oneCompatibleType = false;
 					for (SkriptType option : input.getTypes()) {
 						try {
-							if (!paramClass.isAssignableFrom(option.materialize().getBackingClass())) {
-								throw new IllegalArgumentException("input type of call target doesn't match");
+							if (checkCompatible(option.materialize().getBackingClass(), paramClass)) {
+								oneCompatibleType = true;
 							}
 						} catch (ClassNotFoundException e) {
 							throw new IllegalArgumentException("failed to materialize input type", e);
 						}
 					}
+					if (!oneCompatibleType) { // Throw if parameter type isn't any of accepted types
+						throw new IllegalArgumentException(paramClass + " doesn't match any of allowed input types");
+					}
 				}
 				
 				try {
-					if (!type.returnType().isAssignableFrom(returnType.materialize().getBackingClass())) {
-						throw new IllegalArgumentException("return type of call target doesn't match");
+					Class<?> expected = returnType.materialize().getBackingClass();
+					Class<?> actual = type.returnType();
+					if (!checkCompatible(expected, actual)) {
+						throw new IllegalArgumentException(expected + " is not assignable from return type " + actual);
 					}
 				} catch (ClassNotFoundException e) {
 					throw new IllegalArgumentException("failed to materialize return type", e);
@@ -105,6 +111,37 @@ public class CallableExpression extends Expression {
 			}
 			this.callTargets = targets;
 			return this;
+		}
+		
+		private boolean checkCompatible(Class<?> expected, Class<?> actual) {
+			if (!expected.isAssignableFrom(actual)) {
+				if (actual.isPrimitive()) { // Try if boxed type would be assignable
+					// Replace primitives with boxed types to allow e.g. j.l.Number in SkriptTypes
+					if (actual.equals(boolean.class)) {
+						actual = Boolean.class;
+					} else if (actual.equals(byte.class)) {
+						actual = Byte.class;
+					} else if (actual.equals(short.class)) {
+						actual = Short.class;
+					} else if (actual.equals(char.class)) {
+						actual = Character.class;
+					} else if (actual.equals(int.class)) {
+						actual = Integer.class;
+					} else if (actual.equals(long.class)) {
+						actual = Long.class;
+					} else if (actual.equals(float.class)) {
+						actual = Float.class;
+					} else if (actual.equals(double.class)) {
+						actual = Double.class;
+					}
+					
+					if (expected.isAssignableFrom(actual)) {
+						return true; // Succeeded with boxing, no problem here
+					}
+				}
+				return false;
+			}
+			return true;
 		}
 		
 		/**
