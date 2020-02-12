@@ -94,7 +94,13 @@ public class ExpressionParserTest {
 	@Test
 	public void reverseSay() {
 		parseAll("greeting shouted", exprShouted);
-		parseAll("say greeting shouted", exprShouted);
-		parseAll("say greeting shouted shouted", exprShouted);
+		
+		// Things below are technically ambiguous
+		// Current parser prefers to consume as much characters as possible
+		// If this changes (e.g. by matchPattern() redesign), these WILL need to be updated
+		// say (greeting shouted)
+		parseAll("say greeting shouted", exprSay);
+		// say (greeting shouted shouted)
+		parseAll("say greeting shouted shouted", exprSay);
 	}
 }

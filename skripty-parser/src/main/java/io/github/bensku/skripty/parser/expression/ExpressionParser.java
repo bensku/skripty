@@ -57,11 +57,11 @@ public class ExpressionParser {
 	
 	/**
 	 * Creates a copy of this parser with given flags.
-	 * @param flags Expression parser flags.
+	 * @param newFlags Expression parser flags.
 	 * @return A new expression parser.
 	 */
-	public ExpressionParser withFlags(int flags) {
-		return new ExpressionParser(flags, literalParsers, expressions);
+	public ExpressionParser withFlags(int newFlags) {
+		return new ExpressionParser(newFlags, literalParsers, expressions);
 	}
 	
 	/**
@@ -88,16 +88,10 @@ public class ExpressionParser {
 		 * End index of this parse operation in input (exclusive).
 		 */
 		private final int end;
-		
-		/**
-		 * Return type of the parsed expression.
-		 */
-		private final SkriptType returnType;
 
-		private Result(AstNode node, int end, SkriptType returnType) {
+		private Result(AstNode node, int end) {
 			this.node = node;
 			this.end = end;
-			this.returnType = returnType;
 		}
 
 		public AstNode getNode() {
@@ -109,7 +103,7 @@ public class ExpressionParser {
 		}
 		
 		public SkriptType getReturnType() {
-			return returnType;
+			return node.getReturnType();
 		}
 
 	}
@@ -134,7 +128,7 @@ public class ExpressionParser {
 				}
 				
 				AstNode node = new AstNode.Literal(literal.getType(), literal.getValue());
-				Result result = new Result(node, literal.getEnd(), literal.getType());
+				Result result = new Result(node, literal.getEnd());
 				tempResults[resultCount++] = result;
 				
 				// Even though result is literal, it could be used as input to something else
@@ -184,7 +178,7 @@ public class ExpressionParser {
 	 */
 	private int wrapAsFirstInput(byte[] input, Result[] out, int resultCount, Result original, SkriptType[] types) {
 		for (ExpressionLayer layer : expressions) {
-			Result[] secondResults = parseSecond(layer, original.getReturnType(), input, original.getEnd());
+			Result[] secondResults = parseSecond(layer, original.getNode(), input, original.getEnd());
 			for (Result result : secondResults) {
 				if (result == null) {
 					break;
@@ -238,13 +232,13 @@ public class ExpressionParser {
 	 * Parses all matching expressions by using input as a key to their second
 	 * parts. The first parts must be inputs that accept the given type.
 	 * @param layer Layer to query expressions from.
-	 * @param firstType Type of the first input.
+	 * @param firstNode First input node.
 	 * @param input Input to parse.
 	 * @param start Index of byte where to start parsing from in input.
 	 * @return Parse results, or an empty array if the input cannot be parsed
 	 * in any way.
 	 */
-	private Result[] parseSecond(ExpressionLayer layer, SkriptType firstType, byte[] input, int start) {
+	private Result[] parseSecond(ExpressionLayer layer, AstNode firstNode, byte[] input, int start) {
 		ExpressionInfo[] candidates = layer.lookupSecond(input, start);
 		Result[] results = new Result[candidates.length];
 		int resultCount = 0;
@@ -257,7 +251,7 @@ public class ExpressionParser {
 			// Filter based on return type of expression we already have
 			int inputSlot = ((PatternPart.Input) pattern.partAt(0)).getSlot();
 			InputType inputType = info.getExpression().getInputType(inputSlot);
-			if (!ArrayHelpers.contains(inputType.getTypes(), firstType)) {
+			if (!hasFlag(IGNORE_TYPES) && !ArrayHelpers.contains(inputType.getTypes(), firstNode.getReturnType())) {
 				continue; // Doesn't accept our type as argument
 			}
 
@@ -269,6 +263,9 @@ public class ExpressionParser {
 			// Success or a failure, we'll return that (result or null) to caller
 			Result result = matchPattern(info, 2, input, pos);
 			if (result != null) {
+				// Populate input corresponding to first pattern part
+				((AstNode.Expr) result.getNode()).getInputs()[inputSlot] = firstNode;
+				
 				results[resultCount++] = result;
 			}
 		}
@@ -321,6 +318,12 @@ public class ExpressionParser {
 				for (Result result : potentialInputs) {
 					Result after = matchPattern(info, i + 1, input, result.getEnd());
 					if (after != null && after.getEnd() > pos) { // Doesn't conflict with this expression
+						// Copy inputs parsed recursively after current one here
+						AstNode[] afterInputs = ((AstNode.Expr) after.getNode()).getInputs();
+						for (int j = inputSlot + 1; j < inputs.length; j++) {
+							inputs[j] = afterInputs[j];
+						}
+						
 						// Assign this as input
 						inputs[inputSlot] = result.getNode();
 						// Recursive matchPattern() call has set the subsequent inputs (if any) for us
@@ -337,8 +340,7 @@ public class ExpressionParser {
 			}
 		}
 		
-		// Everything went well, got an AST node out of it
-		return new Result(node, pos, info.getExpression().getReturnType());
+		return new Result(node, pos);
 	}
 
 }
