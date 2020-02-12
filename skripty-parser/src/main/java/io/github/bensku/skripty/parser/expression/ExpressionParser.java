@@ -17,10 +17,22 @@ import io.github.bensku.skripty.parser.util.RadixTree;
 public class ExpressionParser {
 	
 	/**
+	 * Parsers with this flag ignore {@link SkriptType types}. The results
+	 * will not be compilable, but could be used to produce better error
+	 * messages after compiling with types has failed.
+	 */
+	public static final int IGNORE_TYPES = 1;
+	
+	/**
 	 * Temporary limit for amount of parse results. TODO do not use fixed-size arrays
 	 */
 	private static final int PARSE_MAX_RESULTS = 128;
 
+	/**
+	 * Parser flags.
+	 */
+	private final int flags;
+	
 	/**
 	 * Parsers for literal types. These are applied basically everywhere before
 	 * trying to parse expressions. As such, having more than a few of them has
@@ -34,8 +46,31 @@ public class ExpressionParser {
 	private final ExpressionLayer[] expressions;
 
 	public ExpressionParser(LiteralParser[] literalParsers, ExpressionLayer... expressions) {
+		this(0, literalParsers, expressions);
+	}
+	
+	private ExpressionParser(int flags, LiteralParser[] literalParsers, ExpressionLayer... expressions) {
+		this.flags = flags;
 		this.literalParsers = literalParsers;
 		this.expressions = expressions;
+	}
+	
+	/**
+	 * Creates a copy of this parser with given flags.
+	 * @param flags Expression parser flags.
+	 * @return A new expression parser.
+	 */
+	public ExpressionParser withFlags(int flags) {
+		return new ExpressionParser(flags, literalParsers, expressions);
+	}
+	
+	/**
+	 * Checks if this parser has a flag.
+	 * @param flag Flag to check for.
+	 * @return
+	 */
+	public boolean hasFlag(int flag) {
+		return (flags & flag) != 0;
 	}
 	
 	/**
@@ -94,6 +129,10 @@ public class ExpressionParser {
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result literal = parser.parse(input, start);
 			if (literal != null) { // This is a literal!
+				if (!hasFlag(IGNORE_TYPES) && ArrayHelpers.contains(types, literal.getType())) {
+					continue; // Literal could be parsed, but has incompatible type
+				}
+				
 				AstNode node = new AstNode.Literal(literal.getType(), literal.getValue());
 				Result result = new Result(node, literal.getEnd(), literal.getType());
 				tempResults[resultCount++] = result;
@@ -117,7 +156,7 @@ public class ExpressionParser {
 				}
 				
 				// Add this result if it is of correct type
-				if (ArrayHelpers.contains(types, result.getReturnType())) {
+				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
 					tempResults[resultCount++] = result;
 				}
 				
@@ -152,7 +191,7 @@ public class ExpressionParser {
 				}
 				
 				// If this is of correct type, add it to results
-				if (ArrayHelpers.contains(types, result.getReturnType())) {
+				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
 					out[resultCount++] = result;
 				}
 				
