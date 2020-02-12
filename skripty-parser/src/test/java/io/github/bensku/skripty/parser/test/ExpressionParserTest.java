@@ -32,6 +32,8 @@ public class ExpressionParserTest {
 	private Expression exprConsume;
 	private Expression exprFirst;
 	private Expression exprSecond;
+	private Expression exprInputs;
+	private Expression exprInputs2;
 	
 	@BeforeEach
 	public void initExpressions() {
@@ -52,6 +54,16 @@ public class ExpressionParserTest {
 				.returnType(TEXT)
 				.callTargets()
 				.create();
+		exprInputs = registry.makeCallable(this)
+				.inputTypes(new InputType(true, TEXT), new InputType(true, TEXT))
+				.returnType(TEXT)
+				.callTargets()
+				.create();
+		exprInputs2 = registry.makeCallable(this)
+				.inputTypes(new InputType(true, TEXT), new InputType(true, TEXT))
+				.returnType(TEXT)
+				.callTargets()
+				.create();
 	}
 	
 	@BeforeEach
@@ -63,6 +75,8 @@ public class ExpressionParserTest {
 		basicLayer.register(exprConsume, Pattern.create("consume ", 0));
 		basicLayer.register(exprFirst, Pattern.create("first-expr ", 0));
 		basicLayer.register(exprSecond, Pattern.create(0, " second-expr"));
+		basicLayer.register(exprInputs, Pattern.create(0, " input ", 1));
+		basicLayer.register(exprInputs2, Pattern.create("two inputs ", 0, 1));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);
@@ -100,7 +114,7 @@ public class ExpressionParserTest {
 	}
 	
 	@Test
-	public void reverseSay() {
+	public void reversed() {
 		parseAll("string constant second-expr", exprSecond);
 		
 		// Things below are technically ambiguous
@@ -110,5 +124,27 @@ public class ExpressionParserTest {
 		parseAll("consume string constant second-expr", exprConsume);
 		// say (greeting shouted shouted)
 		parseAll("consume string constant second-expr second-expr", exprConsume);
+	}
+	
+	@Test
+	public void deepRecursive() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 100; i++) {
+			sb.append("first-expr ");
+		}
+		sb.append("string constant");
+		for (int i = 0; i < 100; i++) {
+			sb.append(" second-expr");
+		}
+	}
+	
+	@Test
+	public void twoInputs() {
+		parseAll("string constant input string constant", exprInputs);
+		parseAll("consume string constant input string constant", exprConsume); // simpleskript helped find this
+		
+		// Space between inputs would be a literal part, in this case there isn't one
+		parseAll("two inputs string constantstring constant", exprInputs2);
+		parseAll("consume two inputs string constantstring constant", exprConsume);
 	}
 }
