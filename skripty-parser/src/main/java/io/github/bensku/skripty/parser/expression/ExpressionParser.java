@@ -296,7 +296,7 @@ public class ExpressionParser {
 		Pattern pattern = info.getPattern();
 		
 		// Match pattern part-by-part against input
-		partsLoop: for (int i = firstPart; i < pattern.length(); i++) {
+		for (int i = firstPart; i < pattern.length(); i++) {
 			PatternPart part = pattern.partAt(i);
 			if (part instanceof PatternPart.Literal) {
 				byte[] text = ((PatternPart.Literal) part).getText();
@@ -320,18 +320,20 @@ public class ExpressionParser {
 				// AFTER this input, should it be used
 				for (Result result : potentialInputs) {
 					Result after = matchPattern(info, i + 1, input, result.getEnd());
-					if (after != null) {
+					if (after != null && after.getEnd() > pos) { // Doesn't conflict with this expression
 						// Assign this as input
 						inputs[inputSlot] = result.getNode();
 						// Recursive matchPattern() call has set the subsequent inputs (if any) for us
 						pos = after.getEnd(); // Skip ahead what was recursively parsed
-						break partsLoop; // goto return success
 					}
 				}
 				
-				// Subsequent parts of this expression were not parseable with potential inputs
-				// (or maybe there were no potential inputs at all)
-				return null; // Failed to parse this candidate!
+				if (inputs[inputSlot] == null) {
+					// Subsequent parts of this expression were not parseable with potential inputs
+					// (or maybe there were no potential inputs at all)
+					return null; // Failed to parse this candidate!
+				}
+				break; // Latter parts, if any, have been recursively processed
 			}
 		}
 		
