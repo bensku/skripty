@@ -201,9 +201,7 @@ public class CallableExpression extends Expression {
 			inputClasses[i] = inputs[i].getClass();
 		}
 		
-		// TODO consider how to get the input types here
-		// We can't derive them from classes, but explicitly passing them is very verbose
-		MethodHandle target = findTarget(new SkriptType[inputs.length], inputClasses, false);
+		MethodHandle target = findTarget(null, inputClasses, false);
 		assert target != null : "no call targets found";
 		try {
 			return target.invokeWithArguments(inputs);
@@ -229,6 +227,8 @@ public class CallableExpression extends Expression {
 	/**
 	 * Attempts to find a suitable call target for inputs of given types.
 	 * @param foundInputs Types of inputs we're looking for a call target.
+	 * If input types are not known, this can be left null; however, there is
+	 * a risk that a wrong call target gets chosen if this is done.
 	 * @param inputClasses Classes of input values.
 	 * @param exact Whether or not to require input classes to exactly match
 	 * those of the call site. If this is enabled,
@@ -247,6 +247,9 @@ public class CallableExpression extends Expression {
 	}
 	
 	private boolean doTypesMatch(SkriptType[] expected, SkriptType[] actual) {
+		if (actual == null) { // Caller only cares about JVM types matching
+			return true;
+		}
 		if (expected.length != actual.length) {
 			return false;
 		}

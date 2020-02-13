@@ -58,7 +58,7 @@ public class ExpressionTest {
 		
 		// And then that calling executes them, too
 		assertEquals("hello, world", expr.call());
-		//assertEquals("abc", expr.call("abc"));
+		assertEquals("abc", expr.call("abc"));
 	}
 	
 	@Test
