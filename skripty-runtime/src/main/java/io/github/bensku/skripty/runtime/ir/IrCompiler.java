@@ -3,9 +3,11 @@ package io.github.bensku.skripty.runtime.ir;
 import java.lang.invoke.MethodHandle;
 
 import io.github.bensku.skripty.core.AstNode;
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.core.ScriptUnit;
 import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.expression.CallTarget;
 import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.ConstantExpression;
 import io.github.bensku.skripty.core.expression.Expression;
@@ -118,18 +120,36 @@ public class IrCompiler {
 			return constant.getClass();
 		} else { // Resolve call target, emit call to it
 			CallableExpression callable = (CallableExpression) expr;
-			MethodHandle handle = callable.findTarget(inputTypes, inputClasses, true);
-			if (handle != null) {
-				block.append(new IrNode.CallExact(handle));
-				return handle.type().returnType(); // Do not emit two calls to same method
+			CallTarget target = callable.findTarget(inputTypes, inputClasses, true);
+			if (target != null) {
+				emitMethod(block, callable.getInstance(), target.getMethod(), true, target.shouldInjectState());
+				return target.getMethod().type().returnType(); // Do not emit two calls to same method
 			}
-			handle = callable.findTarget(inputTypes, inputClasses, false);
-			if (handle != null) {
-				block.append(new IrNode.CallVirtual(handle));
+			target = callable.findTarget(inputTypes, inputClasses, false);
+			if (target != null) {
+				emitMethod(block, callable.getInstance(), target.getMethod(), false, target.shouldInjectState());
 			} else {
 				throw new AssertionError("call target not found"); // TODO handle this API usage error better
 			}
-			return handle.type().returnType();
+			return target.getMethod().type().returnType();
+		}
+	}
+	
+	/**
+	 * Emits a call to a method.
+	 * @param block Target IR.
+	 * @param instance Instance to use as 'this' for calls.
+	 * @param handle Method handle.
+	 * @param exact If handle is exactly correct (i.e. no type casting needed).
+	 * @param injectState If first parameter of method should be the
+	 * {@link RunnerState runner state}
+	 */
+	private void emitMethod(IrBlock block, Object instance, MethodHandle handle, boolean exact, boolean injectState) {
+		handle = handle.bindTo(instance);
+		if (injectState) {
+			block.append(new IrNode.CallInjectState(handle, exact));
+		} else {
+			block.append(new IrNode.CallPlain(handle, exact));
 		}
 	}
 }

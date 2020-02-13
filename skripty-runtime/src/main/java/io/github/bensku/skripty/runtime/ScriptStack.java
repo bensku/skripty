@@ -48,6 +48,17 @@ public class ScriptStack {
 	}
 	
 	/**
+	 * Pops values to given array.
+	 * @param array Array to put popped values to.
+	 * @param start Start index in given array.
+	 * @param count How many values to pop.
+	 */
+	public void popInto(Object[] array, int start, int count) {
+		System.arraycopy(slots, this.size - count, array, start, count);
+		size -= count;
+	}
+	
+	/**
 	 * Peeks at the top value of this stack without removing it.
 	 * @return Top value of the stack.
 	 */

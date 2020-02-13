@@ -14,6 +14,7 @@ import io.github.bensku.skripty.parser.script.SourceNode;
 import io.github.bensku.skripty.simple.expr.ExprCrash;
 import io.github.bensku.skripty.simple.expr.ExprEquals;
 import io.github.bensku.skripty.simple.expr.ExprPrint;
+import io.github.bensku.skripty.simple.expr.ExprRunnerState;
 import io.github.bensku.skripty.simple.expr.ExprTime;
 
 /**
@@ -58,6 +59,7 @@ public class SimpleParser {
 		exprs.makeCallable(types, new ExprCrash());
 		exprs.makeCallable(types, new ExprEquals());
 		exprs.makeCallable(types, new ExprPrint());
+		exprs.makeCallable(types, new ExprRunnerState());
 		exprs.makeCallable(types, new ExprTime());
 		
 		return exprs;

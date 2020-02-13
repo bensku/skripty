@@ -201,10 +201,10 @@ public class CallableExpression extends Expression {
 			inputClasses[i] = inputs[i].getClass();
 		}
 		
-		MethodHandle target = findTarget(null, inputClasses, false);
+		CallTarget target = findTarget(null, inputClasses, false);
 		assert target != null : "no call targets found";
 		try {
-			return target.invokeWithArguments(inputs);
+			return target.getMethod().invokeWithArguments(inputs);
 		} catch (Throwable e) {
 			throw new AssertionError(e); // TODO handle this better
 		}
@@ -236,11 +236,12 @@ public class CallableExpression extends Expression {
 	 * provided that return type is set correctly.
 	 * @return A target method.
 	 */
-	public MethodHandle findTarget(SkriptType[] foundInputs, Class<?>[] inputClasses, boolean exact) {
+	public CallTarget findTarget(SkriptType[] foundInputs, Class<?>[] inputClasses, boolean exact) {
 		for (CallTarget candidate : callTargets) {
 			if (doTypesMatch(candidate.getInputTypes(), foundInputs)
-					&& doParametersMatch(candidate.getMethod().type(), inputClasses, exact)) {
-				return candidate.getMethod().bindTo(instance); // Parameters match
+					&& doParametersMatch(candidate.getMethod().type(), inputClasses, exact,
+							candidate.shouldInjectState() ? 2 : 1)) {
+				return candidate; // Parameters match
 			}
 		}
 		return null;
@@ -261,17 +262,18 @@ public class CallableExpression extends Expression {
 		return true;
 	}
 	
-	private boolean doParametersMatch(MethodType type, Class<?>[] inputClasses, boolean exact) {
-		if (inputClasses.length != type.parameterCount() - 1) {
+	private boolean doParametersMatch(MethodType type, Class<?>[] inputClasses, boolean exact,
+			int injectedCount) {
+		if (inputClasses.length != type.parameterCount() - injectedCount) {
 			return false; // Wrong number of parameters
 		}
-		for (int i = 1; i < type.parameterCount(); i++) {
+		for (int i = injectedCount; i < type.parameterCount(); i++) {
 			if (exact) { // Exact match required, check if classes are exactly same
-				if (!type.parameterType(i).equals(inputClasses[i - 1])) {
+				if (!type.parameterType(i).equals(inputClasses[i - injectedCount])) {
 					return false;
 				}
 			} else { // Input just needs to be convertible to requested class
-				if (!type.parameterType(i).isAssignableFrom(inputClasses[i - 1])) {
+				if (!type.parameterType(i).isAssignableFrom(inputClasses[i - injectedCount])) {
 					return false;
 				}
 			}

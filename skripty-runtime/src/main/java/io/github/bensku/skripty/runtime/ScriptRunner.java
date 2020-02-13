@@ -30,7 +30,7 @@ public class ScriptRunner {
 
 	public void run(IrBlock block) throws Throwable {
 		IrNode[] nodes = block.nodeArray(); //  Zero-copy, but might have nulls at end
-		RunnerState state = stateSupplier.get(); // TODO pass to methods that want it
+		RunnerState state = stateSupplier.get();
 		ScriptStack stack = new ScriptStack(stackSize);
 		
 		// Execute all nodes
@@ -38,10 +38,17 @@ public class ScriptRunner {
 			IrNode node = nodes[i];
 			if (node instanceof IrNode.LoadConstant) {
 				stack.push(((IrNode.LoadConstant) node).getValue());
-			} else if (node instanceof IrNode.CallMethod) {
-				MethodHandle handle = ((IrNode.CallMethod) node).getHandle();
+			} else if (node instanceof IrNode.CallPlain) {
+				MethodHandle handle = ((IrNode.CallPlain) node).getHandle();
 				int argCount = handle.type().parameterCount();
 				stack.push(handle.invokeWithArguments(stack.pop(argCount)));
+			} else if (node instanceof IrNode.CallInjectState) {
+				MethodHandle handle = ((IrNode.CallInjectState) node).getHandle();
+				int argCount = handle.type().parameterCount();
+				Object[] args = new Object[argCount];
+				args[0] = state; // Inject runner state
+				stack.popInto(args, 1, argCount - 1); // Pop other arguments from stack
+				stack.push(handle.invokeWithArguments(args));
 			} else if (node instanceof IrNode.Jump) {
 				Object expected = ((IrNode.Jump) node).getConstant();
 				if (expected != stack.peek()) { // Jump to somewhere

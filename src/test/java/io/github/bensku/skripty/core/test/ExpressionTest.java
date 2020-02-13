@@ -3,7 +3,6 @@ package io.github.bensku.skripty.core.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
@@ -53,8 +52,10 @@ public class ExpressionTest {
 		assertEquals(type, expr.getReturnType());
 		
 		// Test that correct call targets are found
-		assertEquals("hello, world", expr.findTarget(new SkriptType[0], new Class[0], true).invokeExact());
-		assertEquals("abc", expr.findTarget(new SkriptType[] {stringType}, new Class[] {String.class}, true).invokeExact("abc"));
+		assertEquals("hello, world", expr.findTarget(new SkriptType[0], new Class[0], true)
+				.getMethod().invokeExact());
+		assertEquals("abc", expr.findTarget(new SkriptType[] {stringType}, new Class[] {String.class}, true)
+				.getMethod().invokeExact("abc"));
 		
 		// And then that calling executes them, too
 		assertEquals("hello, world", expr.call());

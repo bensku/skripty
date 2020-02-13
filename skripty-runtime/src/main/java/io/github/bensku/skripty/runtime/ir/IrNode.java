@@ -2,6 +2,7 @@ package io.github.bensku.skripty.runtime.ir;
 
 import java.lang.invoke.MethodHandle;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.ScriptBlock;
 
 /**
@@ -45,37 +46,46 @@ public class IrNode {
 		 */
 		private final MethodHandle handle;
 		
-		private CallMethod(MethodHandle handle) {
+		/**
+		 * If no type conversions are needed to call use the handle.
+		 */
+		private final boolean exact;
+		
+		CallMethod(MethodHandle handle, boolean isExact) {
 			this.handle = handle;
+			this.exact = isExact;
 		}
 		
 		public MethodHandle getHandle() {
 			return handle;
 		}
+		
+		public boolean isExact() {
+			return exact;
+		}
 	}
 	
 	/**
-	 * Call to a method using {@link MethodHandle#invokeExact(Object...)}.
-	 * Pop stack slots to use as arguments.
+	 * Just call the method.
 	 *
 	 */
-	public static class CallExact extends CallMethod {
+	public static class CallPlain extends CallMethod {
 
-		public CallExact(MethodHandle handle) {
-			super(handle);
+		CallPlain(MethodHandle handle, boolean isExact) {
+			super(handle, isExact);
 		}
 		
 	}
 	
 	/**
-	 * Call to a method using {@link MethodHandle#invoke(Object...)}.
-	 * Pop stack slots to use as arguments.
+	 * Call method and inject {@link RunnerState runner state} as first
+	 * parameter.
 	 *
 	 */
-	public static class CallVirtual extends CallMethod {
+	public static class CallInjectState extends CallMethod {
 
-		public CallVirtual(MethodHandle handle) {
-			super(handle);
+		CallInjectState(MethodHandle handle, boolean isExact) {
+			super(handle, isExact);
 		}
 		
 	}

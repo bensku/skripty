@@ -103,12 +103,14 @@ public class ExpressionRegistry {
 			Method method = methods[i];
 			if (method.getAnnotation(io.github.bensku.skripty.core.annotation.CallTarget.class) != null) {
 				try {
-					MethodHandle handle = lookup.unreflect(method);
+					MethodHandle handle = lookup.unreflect(method); // Core reflection -> MethodHandle
 					Parameter[] params = method.getParameters();
+					// If method accepts a RunnerState as first parameter, assume that it should be injected
 					boolean injectState = params.length > 0 && RunnerState.class.isAssignableFrom(params[0].getType());
-					SkriptType[] inputTypes = new SkriptType[params.length];
+					int injectedCount = injectState ? 1 : 0; // Skip runner state parameter
+					SkriptType[] inputTypes = new SkriptType[params.length - injectedCount];
 					for (int j = 0; j < inputTypes.length; j++) {
-						Type type = params[j].getAnnotation(Type.class);
+						Type type = params[j + injectedCount].getAnnotation(Type.class);
 						if (type != null) { // That parameter wants to limit accepted SkriptTypes
 							inputTypes[j] = resolveType(typeSystem, type.value());
 						}
