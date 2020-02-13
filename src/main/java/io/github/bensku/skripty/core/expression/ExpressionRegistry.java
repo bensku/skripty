@@ -4,12 +4,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.function.Consumer;
 
 import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
+import io.github.bensku.skripty.core.annotation.Type;
 
 /**
  * A registry for expressions.
@@ -102,10 +104,16 @@ public class ExpressionRegistry {
 			if (method.getAnnotation(io.github.bensku.skripty.core.annotation.CallTarget.class) != null) {
 				try {
 					MethodHandle handle = lookup.unreflect(method);
-					Class<?>[] paramTypes = method.getParameterTypes();
-					boolean injectState = paramTypes.length > 0 && RunnerState.class.isAssignableFrom(paramTypes[0]);
-					SkriptType[] inputTypes = new SkriptType[paramTypes.length];
-					// TODO for now, do not filter input types at all - annotation API pending
+					Parameter[] params = method.getParameters();
+					boolean injectState = params.length > 0 && RunnerState.class.isAssignableFrom(params[0].getType());
+					SkriptType[] inputTypes = new SkriptType[params.length];
+					for (int j = 0; j < inputTypes.length; j++) {
+						Type type = params[j].getAnnotation(Type.class);
+						if (type != null) { // That parameter wants to limit accepted SkriptTypes
+							inputTypes[j] = resolveType(typeSystem, type.value());
+						}
+					}
+					
 					callTargets[targetCount++] = new CallTarget(handle, injectState, inputTypes);
 				} catch (IllegalAccessException e) {
 					throw new IllegalArgumentException("cannot access call target '" + method.getName() + "'", e);
