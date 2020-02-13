@@ -102,7 +102,7 @@ public class CallableExpression extends Expression {
 						}
 					}
 					if (!oneCompatibleType) { // Throw if parameter type isn't any of accepted types
-						throw new IllegalArgumentException(paramClass + " doesn't match any of allowed input types");
+						throw new IllegalArgumentException("parameter " + inputIndex + " (" + paramClass.getName() + ") does not match any of input types");
 					}
 				}
 				
@@ -204,6 +204,14 @@ public class CallableExpression extends Expression {
 		CallTarget target = findTarget(null, inputClasses, false);
 		assert target != null : "no call targets found";
 		try {
+			int injectedCount = target.shouldInjectState() ? 2 : 1;
+			Object[] newInputs = new Object[inputs.length + injectedCount];
+			newInputs[0] = instance;
+			if (target.shouldInjectState()) {
+				newInputs[1] = null; // We don't have a runner, so no state either
+			}
+			System.arraycopy(inputs, 0, newInputs, injectedCount, inputs.length);
+			inputs = newInputs;
 			return target.getMethod().invokeWithArguments(inputs);
 		} catch (Throwable e) {
 			throw new AssertionError(e); // TODO handle this better

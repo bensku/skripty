@@ -8,6 +8,7 @@ import java.lang.invoke.MethodType;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.CallTarget;
 import io.github.bensku.skripty.core.expression.CallableExpression;
@@ -36,30 +37,43 @@ public class ExpressionTest {
 		return arg;
 	}
 	
+	public Object callTargetC(RunnerState state, Object obj) {
+		return obj;
+	}
+	
 	@Test
 	public void findCallTarget() throws Throwable {
 		MethodHandles.Lookup lookup = MethodHandles.lookup();
 		SkriptType stringType = SkriptType.create(String.class);
-		CallTarget targetA = new CallTarget(lookup.findVirtual(getClass(), "callTargetA", MethodType.methodType(Object.class)), false);
-		CallTarget targetB = new CallTarget(lookup.findVirtual(getClass(), "callTargetB", MethodType.methodType(Object.class, String.class)), false, stringType);
+		CallTarget targetA = new CallTarget(lookup.findVirtual(getClass(), "callTargetA",
+				MethodType.methodType(Object.class)), false);
+		CallTarget targetB = new CallTarget(lookup.findVirtual(getClass(), "callTargetB",
+				MethodType.methodType(Object.class, String.class)), false, stringType);
+		CallTarget targetC = new CallTarget(lookup.findVirtual(getClass(), "callTargetC",
+				MethodType.methodType(Object.class, RunnerState.class, Object.class)),
+				true, type);
 		
 		CallableExpression expr = registry.makeCallable(this)
-				.inputTypes(new InputType(true, stringType))
+				.inputTypes(new InputType(true, stringType, type))
 				.returnType(type)
-				.callTargets(targetA, targetB)
+				.callTargets(targetA, targetB, targetC)
 				.create();
 		assertEquals(1, expr.getInputTypes().length);
 		assertEquals(type, expr.getReturnType());
 		
 		// Test that correct call targets are found
 		assertEquals("hello, world", expr.findTarget(new SkriptType[0], new Class[0], true)
-				.getMethod().invokeExact());
+				.getMethod().invokeExact(this));
 		assertEquals("abc", expr.findTarget(new SkriptType[] {stringType}, new Class[] {String.class}, true)
-				.getMethod().invokeExact("abc"));
+				.getMethod().invokeExact(this, "abc"));
+		Object token = new Object();
+		assertEquals(token, expr.findTarget(new SkriptType[] {type}, new Class[] {Object.class}, true)
+				.getMethod().invokeExact(this, (RunnerState) null, token));
 		
 		// And then that calling executes them, too
 		assertEquals("hello, world", expr.call());
 		assertEquals("abc", expr.call("abc"));
+		assertEquals(token, expr.call(token));
 	}
 	
 	@Test
