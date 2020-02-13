@@ -34,6 +34,7 @@ public class ExpressionParserTest {
 	private Expression exprSecond;
 	private Expression exprInputs;
 	private Expression exprInputs2;
+	private Expression exprLiterals;
 	
 	@BeforeEach
 	public void initExpressions() {
@@ -64,6 +65,11 @@ public class ExpressionParserTest {
 				.returnType(TEXT)
 				.callTargets()
 				.create();
+		exprLiterals = registry.makeCallable(this)
+				.inputTypes(new InputType(true, TEXT))
+				.returnType(TEXT)
+				.callTargets()
+				.create();
 	}
 	
 	@BeforeEach
@@ -77,6 +83,7 @@ public class ExpressionParserTest {
 		basicLayer.register(exprSecond, Pattern.create(0, " second-expr"));
 		basicLayer.register(exprInputs, Pattern.create(0, " input ", 1));
 		basicLayer.register(exprInputs2, Pattern.create("two inputs ", 0, 1));
+		basicLayer.register(exprLiterals, Pattern.create("first ", 0, " second"));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);
@@ -95,7 +102,6 @@ public class ExpressionParserTest {
 		}
 		
 		assertTrue(false, "results did not contain expected expression");
-
 	}
 	
 	@Test
@@ -146,5 +152,24 @@ public class ExpressionParserTest {
 		// Space between inputs would be a literal part, in this case there isn't one
 		parseAll("two inputs string constantstring constant", exprInputs2);
 		parseAll("consume two inputs string constantstring constant", exprConsume);
+	}
+	
+	@Test
+	public void withoutTypes() {
+		byte[] expr = "consume consume string constant".getBytes(StandardCharsets.UTF_8);
+		ExpressionParser.Result[] results = parser.parse(expr, 0, new SkriptType[] {VOID});
+		assertEquals(0, results.length); // Should fail parsing, types are a mess
+		
+		// Patterns are matched, types are just incompatible; what about without them?
+		ExpressionParser typeless = parser.withFlags(ExpressionParser.IGNORE_TYPES);
+		assertTrue(typeless.hasFlag(ExpressionParser.IGNORE_TYPES));
+		ExpressionParser.Result[] results2 = typeless.parse(expr, 0, new SkriptType[] {VOID});
+		assertEquals(exprConsume, ((AstNode.Expr) results2[0].getNode()).getExpression());
+	}
+	
+	@Test
+	public void twoLiterals() {
+		parseAll("first string constant second", exprLiterals);
+		parseAll("consume first string constant second-expr second", exprConsume);
 	}
 }
