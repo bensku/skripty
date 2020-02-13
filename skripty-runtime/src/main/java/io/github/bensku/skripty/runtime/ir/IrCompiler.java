@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandle;
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.core.ScriptUnit;
+import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.ConstantExpression;
 import io.github.bensku.skripty.core.expression.Expression;
@@ -78,9 +79,11 @@ public class IrCompiler {
 	 */
 	private Class<?> emitNode(IrBlock block, AstNode.Expr node) {
 		AstNode[] inputs = node.getInputs();
+		SkriptType[] inputTypes = new SkriptType[inputs.length];
 		Class<?>[] inputClasses = new Class[inputs.length];
 		for (int i = 0; i < inputs.length; i++) { // Emit nodes that load inputs to stack
 			AstNode input = inputs[i];
+			inputTypes[i] = input.getReturnType();
 			try {
 				inputClasses[i] = input.getReturnType().materialize().getBackingClass();
 			} catch (ClassNotFoundException e) {
@@ -96,17 +99,18 @@ public class IrCompiler {
 		}
 		
 		// Emit call to implementation of this node
-		return emitExpression(block, node.getExpression(), inputClasses);
+		return emitExpression(block, node.getExpression(), inputTypes, inputClasses);
 	}
 	
 	/**
 	 * Emits an expression.
 	 * @param block Target IR.
 	 * @param expr Expression to emit.
+	 * @param inputTypes Types of the inputs.
 	 * @param inputClasses Classes of inputs given to the expression.
 	 * @return Superclass of values this expression returns.
 	 */
-	private Class<?> emitExpression(IrBlock block, Expression expr, Class<?>[] inputClasses) {
+	private Class<?> emitExpression(IrBlock block, Expression expr, SkriptType[] inputTypes, Class<?>[] inputClasses) {
 		if (expr instanceof ConstantExpression) { // Constant expression -> constant
 			// Do not allocate unnecessary vararg array
 			Object constant = expr.call((Object[]) null);
@@ -114,12 +118,12 @@ public class IrCompiler {
 			return constant.getClass();
 		} else { // Resolve call target, emit call to it
 			CallableExpression callable = (CallableExpression) expr;
-			MethodHandle handle = callable.findTarget(inputClasses, true);
+			MethodHandle handle = callable.findTarget(inputTypes, inputClasses, true);
 			if (handle != null) {
 				block.append(new IrNode.CallExact(handle));
 				return handle.type().returnType(); // Do not emit two calls to same method
 			}
-			handle = callable.findTarget(inputClasses, false);
+			handle = callable.findTarget(inputTypes, inputClasses, false);
 			if (handle != null) {
 				block.append(new IrNode.CallVirtual(handle));
 			} else {

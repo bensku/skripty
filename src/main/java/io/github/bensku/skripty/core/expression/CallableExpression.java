@@ -2,7 +2,6 @@ package io.github.bensku.skripty.core.expression;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-
 import io.github.bensku.skripty.core.SkriptType;
 
 /**
@@ -19,7 +18,7 @@ public class CallableExpression extends Expression {
 		
 		private InputType[] inputTypes;
 		private SkriptType returnType;
-		private MethodHandle[] callTargets;
+		private CallTarget[] callTargets;
 		
 		Builder(ExpressionRegistry registry, int id, Object instance) {
 			this.registry = registry;
@@ -69,25 +68,34 @@ public class CallableExpression extends Expression {
 		 * are incompatible with this expression's return type or input types.
 		 * @throws IllegalStateException When called too early.
 		 */
-		public Builder callTargets(MethodHandle... targets) {
+		public Builder callTargets(CallTarget... targets) {
 			if (inputTypes == null || returnType == null) {
 				throw new IllegalStateException("must specify input and return types before call targets");
 			}
 			
 			// Validate that the call targets match input and return types
-			for (MethodHandle target : targets) {
-				MethodType type = target.type();
-				// First parameter is 'this' of expression, skip it
-				for (int i = 1; i < type.parameterCount(); i++) {
+			for (CallTarget target : targets) {
+				SkriptType[] filterTypes = target.getInputTypes();
+				MethodType type = target.getMethod().type();
+				
+				// Validate method parameters
+				// 'this' is always implicit first parameter
+				// After it, there might be injected RunnerState
+				int injectedCount = target.shouldInjectState() ? 2 : 1;
+				for (int i = injectedCount; i < type.parameterCount(); i++) {
 					Class<?> paramClass = type.parameterType(i);
-					// TODO if we inject more parameters to call targets, filter them here
 					
-					InputType input = inputTypes[i - 1];
+					int inputIndex = i - injectedCount;
+					InputType input = inputTypes[inputIndex];
 					boolean oneCompatibleType = false;
 					for (SkriptType option : input.getTypes()) {
 						try {
+							// Must be implemented by JVM type that we can actually take
 							if (checkCompatible(option.materialize().getBackingClass(), paramClass)) {
-								oneCompatibleType = true;
+								// Must also match type filter, if one is set
+								if (filterTypes[inputIndex] == null || filterTypes[inputIndex].equals(option)) {
+									oneCompatibleType = true;
+								}
 							}
 						} catch (ClassNotFoundException e) {
 							throw new IllegalArgumentException("failed to materialize input type", e);
@@ -98,6 +106,7 @@ public class CallableExpression extends Expression {
 					}
 				}
 				
+				// Check the return type
 				try {
 					Class<?> expected = returnType.materialize().getBackingClass();
 					Class<?> actual = type.returnType();
@@ -172,22 +181,17 @@ public class CallableExpression extends Expression {
 	private final SkriptType returnType;
 	
 	/**
-	 * Possible call targets for this expression type. The one that is closest
-	 * match to provided inputs is selected. Failing that, entry points at
-	 * start of this array have higher priority.
+	 * Possible call targets for this expression.
 	 */
-	private final MethodHandle[] callTargets;
+	private final CallTarget[] callTargets;
 
 	private CallableExpression(int id, Object instance, InputType[] inputTypes, SkriptType returnType,
-			MethodHandle[] callTargets) {
+			CallTarget[] callTargets) {
 		super(id);
 		this.instance = instance;
 		this.inputTypes = inputTypes;
 		this.returnType = returnType;
 		this.callTargets = callTargets;
-		for (int i = 0; i < callTargets.length; i++) {
-			callTargets[i] = callTargets[i].bindTo(instance);
-		}
 	}
 
 	@Override
@@ -196,7 +200,10 @@ public class CallableExpression extends Expression {
 		for (int i = 0; i < inputClasses.length; i++) {
 			inputClasses[i] = inputs[i].getClass();
 		}
-		MethodHandle target = findTarget(inputClasses, false);
+		
+		// TODO consider how to get the input types here
+		// We can't derive them from classes, but explicitly passing them is very verbose
+		MethodHandle target = findTarget(new SkriptType[inputs.length], inputClasses, false);
 		assert target != null : "no call targets found";
 		try {
 			return target.invokeWithArguments(inputs);
@@ -221,6 +228,7 @@ public class CallableExpression extends Expression {
 
 	/**
 	 * Attempts to find a suitable call target for inputs of given types.
+	 * @param foundInputs Types of inputs we're looking for a call target.
 	 * @param inputClasses Classes of input values.
 	 * @param exact Whether or not to require input classes to exactly match
 	 * those of the call site. If this is enabled,
@@ -228,26 +236,39 @@ public class CallableExpression extends Expression {
 	 * provided that return type is set correctly.
 	 * @return A target method.
 	 */
-	public MethodHandle findTarget(Class<?>[] inputClasses, boolean exact) {
-		for (MethodHandle candidate : callTargets) {
-			if (doParametersMatch(candidate.type(), inputClasses, exact)) {
-				return candidate; // Parameters match
+	public MethodHandle findTarget(SkriptType[] foundInputs, Class<?>[] inputClasses, boolean exact) {
+		for (CallTarget candidate : callTargets) {
+			if (doTypesMatch(candidate.getInputTypes(), foundInputs)
+					&& doParametersMatch(candidate.getMethod().type(), inputClasses, exact)) {
+				return candidate.getMethod().bindTo(instance); // Parameters match
 			}
 		}
 		return null;
 	}
 	
+	private boolean doTypesMatch(SkriptType[] expected, SkriptType[] actual) {
+		if (expected.length != actual.length) {
+			return false;
+		}
+		for (int i = 0; i < expected.length; i++) {
+			if (expected[i] != null && !expected[i].equals(actual[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	private boolean doParametersMatch(MethodType type, Class<?>[] inputClasses, boolean exact) {
-		if (inputClasses.length != type.parameterCount()) {
+		if (inputClasses.length != type.parameterCount() - 1) {
 			return false; // Wrong number of parameters
 		}
-		for (int i = 0; i < type.parameterCount(); i++) {
+		for (int i = 1; i < type.parameterCount(); i++) {
 			if (exact) { // Exact match required, check if classes are exactly same
-				if (!type.parameterType(i).equals(inputClasses[i])) {
+				if (!type.parameterType(i).equals(inputClasses[i - 1])) {
 					return false;
 				}
 			} else { // Input just needs to be convertible to requested class
-				if (!type.parameterType(i).isAssignableFrom(inputClasses[i])) {
+				if (!type.parameterType(i).isAssignableFrom(inputClasses[i - 1])) {
 					return false;
 				}
 			}

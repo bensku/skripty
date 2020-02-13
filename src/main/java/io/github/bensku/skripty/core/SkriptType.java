@@ -9,7 +9,7 @@ public interface SkriptType {
 	/**
 	 * A type that represents nothing (Java/JVM void).
 	 */
-	SkriptType VOID = create(void.class);
+	SkriptType.Concrete VOID = create(void.class);
 	
 	static SkriptType.Virtual create(String className) {
 		return new SkriptType.Virtual(className);

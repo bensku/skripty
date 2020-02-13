@@ -3,6 +3,7 @@ package io.github.bensku.skripty.runtime;
 import java.lang.invoke.MethodHandle;
 import java.util.function.Supplier;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.runtime.ir.IrBlock;
 import io.github.bensku.skripty.runtime.ir.IrNode;
 

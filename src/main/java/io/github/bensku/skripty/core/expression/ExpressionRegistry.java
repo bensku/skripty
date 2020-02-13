@@ -6,8 +6,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.function.Consumer;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.SkriptType;
-import io.github.bensku.skripty.core.annotation.CallTarget;
 import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 
@@ -94,21 +94,26 @@ public class ExpressionRegistry {
 		
 		// All potential call targets
 		Method[] methods = impl.getDeclaredMethods();
-		MethodHandle[] callTargets = new MethodHandle[methods.length];
+		CallTarget[] callTargets = new CallTarget[methods.length];
 		int targetCount = 0;
 		MethodHandles.Lookup lookup = MethodHandles.publicLookup();
 		for (int i = 0; i < methods.length; i++) {
 			Method method = methods[i];
-			if (method.getAnnotation(CallTarget.class) != null) {
+			if (method.getAnnotation(io.github.bensku.skripty.core.annotation.CallTarget.class) != null) {
 				try {
-					callTargets[targetCount++] = lookup.unreflect(method);
+					MethodHandle handle = lookup.unreflect(method);
+					Class<?>[] paramTypes = method.getParameterTypes();
+					boolean injectState = paramTypes.length > 0 && RunnerState.class.isAssignableFrom(paramTypes[0]);
+					SkriptType[] inputTypes = new SkriptType[paramTypes.length];
+					// TODO for now, do not filter input types at all - annotation API pending
+					callTargets[targetCount++] = new CallTarget(handle, injectState, inputTypes);
 				} catch (IllegalAccessException e) {
-					throw new IllegalArgumentException("cannot access call target '" + method.getName() + "'");
+					throw new IllegalArgumentException("cannot access call target '" + method.getName() + "'", e);
 				}
 			}
 		}
 		
-		MethodHandle[] targets = new MethodHandle[targetCount];
+		CallTarget[] targets = new CallTarget[targetCount];
 		System.arraycopy(callTargets, 0, targets, 0, targetCount);
 		return makeCallable(instance)
 				.inputTypes(inputs)
