@@ -8,6 +8,7 @@
 * [Week 2](https://github.com/bensku/skripty/blob/master/docs/week-2.md)
 * [Week 3](https://github.com/bensku/skripty/blob/master/docs/week-3.md)
 * [Week 4](https://github.com/bensku/skripty/blob/master/docs/week-4.md)
+* [Week 5](https://github.com/bensku/skripty/blob/master/docs/week-5.md)
 
 ## Status
 All commits are built by Github Actions; potential errors can be viewed from there.
