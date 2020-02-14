@@ -123,12 +123,11 @@ public class ExpressionParser {
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result literal = parser.parse(input, start);
 			if (literal != null) { // This is a literal!
-				if (!hasFlag(IGNORE_TYPES) && ArrayHelpers.contains(types, literal.getType())) {
+				if (!hasFlag(IGNORE_TYPES) && !ArrayHelpers.contains(types, literal.getNode().getReturnType())) {
 					continue; // Literal could be parsed, but has incompatible type
 				}
 				
-				AstNode node = new AstNode.Literal(literal.getType(), literal.getValue());
-				Result result = new Result(node, literal.getEnd());
+				Result result = new Result(literal.getNode(), literal.getEnd());
 				tempResults[resultCount++] = result;
 				
 				// Even though result is literal, it could be used as input to something else

@@ -1,5 +1,6 @@
 package io.github.bensku.skripty.parser.expression;
 
+import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 
 /**
@@ -12,27 +13,23 @@ public interface LiteralParser {
 	
 	class Result {
 		
-		private final SkriptType type;
-		
-		private final Object value;
+		/**
+		 * Resulting node.
+		 */
+		private final AstNode node;
 		
 		/**
 		 * End index (exclusive) of the parsing operation in the input array.
 		 */
 		private final int end;
 		
-		protected Result(SkriptType type, Object value, int end) {
-			this.type = type;
-			this.value = value;
+		public Result(AstNode node, int end) {
+			this.node = node;
 			this.end = end;
 		}
-	
-		public SkriptType getType() {
-			return type;
-		}
 
-		public Object getValue() {
-			return value;
+		public AstNode getNode() {
+			return node;
 		}
 
 		public int getEnd() {

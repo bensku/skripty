@@ -34,7 +34,7 @@ public class ExpressionParserTest {
 	private Expression exprSecond;
 	private Expression exprInputs;
 	private Expression exprInputs2;
-	private Expression exprLiterals;
+	private Expression exprLiteralParts;
 	
 	@BeforeEach
 	public void initExpressions() {
@@ -65,7 +65,7 @@ public class ExpressionParserTest {
 				.returnType(TEXT)
 				.callTargets()
 				.create();
-		exprLiterals = registry.makeCallable(this)
+		exprLiteralParts = registry.makeCallable(this)
 				.inputTypes(new InputType(true, TEXT))
 				.returnType(TEXT)
 				.callTargets()
@@ -74,7 +74,20 @@ public class ExpressionParserTest {
 	
 	@BeforeEach
 	public void initParser() {
-		LiteralParser[] literalParsers = new LiteralParser[] {};
+		LiteralParser[] literalParsers = new LiteralParser[] {
+				(input, start) -> {
+					byte[] wanted = "literal".getBytes(StandardCharsets.UTF_8);
+					for (int i = 0; i < wanted.length; i++) {
+						int inputIndex = start + i;
+						if (inputIndex == input.length) {
+							return null; // Ran out of input
+						} else if (input[inputIndex] != wanted[i]) {
+							return null; // Didn't match the string we wanted it to match
+						}
+					}
+					return new LiteralParser.Result(new AstNode.Literal(TEXT, "this is literal"), start + wanted.length);
+				}
+		};
 		
 		ExpressionLayer basicLayer = new ExpressionLayer();
 		basicLayer.register(constantStr, Pattern.create("string constant"));
@@ -83,7 +96,7 @@ public class ExpressionParserTest {
 		basicLayer.register(exprSecond, Pattern.create(0, " second-expr"));
 		basicLayer.register(exprInputs, Pattern.create(0, " input ", 1));
 		basicLayer.register(exprInputs2, Pattern.create("two inputs ", 0, 1));
-		basicLayer.register(exprLiterals, Pattern.create("first ", 0, " second"));
+		basicLayer.register(exprLiteralParts, Pattern.create("first ", 0, " second"));
 		ExpressionLayer[] layers = new ExpressionLayer[] {basicLayer};
 		
 		parser = new ExpressionParser(literalParsers, layers);
@@ -91,7 +104,7 @@ public class ExpressionParserTest {
 	
 	private void parseAll(String input, Expression expected) {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(bytes, 0, new SkriptType[] {expected.getReturnType()});
+		ExpressionParser.Result[] results = parser.parse(bytes, 0, expected.getReturnType());
 		
 		for (ExpressionParser.Result result : results) {
 			if (bytes.length == result.getEnd()) {
@@ -102,6 +115,21 @@ public class ExpressionParserTest {
 		}
 		
 		assertTrue(false, "results did not contain expected expression");
+	}
+	
+	private void parseAll(String input, SkriptType type, Object literalValue) {
+		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
+		ExpressionParser.Result[] results = parser.parse(bytes, 0, type);
+		
+		for (ExpressionParser.Result result : results) {
+			if (bytes.length == result.getEnd()) {
+				AstNode.Literal node = (AstNode.Literal) result.getNode();
+				assertEquals(literalValue, node.getValue());
+				return;
+			}
+		}
+		
+		assertTrue(false, "results did not contain expected node");
 	}
 	
 	@Test
@@ -168,8 +196,15 @@ public class ExpressionParserTest {
 	}
 	
 	@Test
-	public void twoLiterals() {
-		parseAll("first string constant second", exprLiterals);
+	public void literalParts() {
+		parseAll("first string constant second", exprLiteralParts);
 		parseAll("consume first string constant second-expr second", exprConsume);
+	}
+	
+	@Test
+	public void simpleLiteral() {
+		parseAll("literal", TEXT, "this is literal");
+		parseAll("consume literal", exprConsume);
+		parseAll("consume first literal second-expr second", exprConsume);
 	}
 }
