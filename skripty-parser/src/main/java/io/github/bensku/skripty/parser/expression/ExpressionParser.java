@@ -123,20 +123,13 @@ public class ExpressionParser {
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result literal = parser.parse(input, start);
 			if (literal != null) { // This is a literal!
-				if (!hasFlag(IGNORE_TYPES) && !ArrayHelpers.contains(types, literal.getNode().getReturnType())) {
-					continue; // Literal could be parsed, but has incompatible type
-				}
-				
 				Result result = new Result(literal.getNode(), literal.getEnd());
-				tempResults[resultCount++] = result;
+				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
+					tempResults[resultCount++] = result;
+				}
 				
 				// Even though result is literal, it could be used as input to something else
 				resultCount = wrapAsFirstInput(input, tempResults, resultCount, result, types);
-				
-				// Early return, a matching literal overrides any and all expressions with similar syntaxes
-				Result[] allResults = new Result[resultCount];
-				System.arraycopy(tempResults, 0, allResults, 0, resultCount);
-				return allResults;
 			}
 		}
 		

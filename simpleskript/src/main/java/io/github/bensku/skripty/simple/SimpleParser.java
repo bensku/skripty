@@ -2,6 +2,7 @@ package io.github.bensku.skripty.simple;
 
 
 import io.github.bensku.skripty.core.ScriptBlock;
+import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
 import io.github.bensku.skripty.parser.expression.ExpressionLayer;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
@@ -17,6 +18,7 @@ import io.github.bensku.skripty.simple.expr.ExprPrint;
 import io.github.bensku.skripty.simple.expr.ExprRunnerState;
 import io.github.bensku.skripty.simple.expr.ExprTime;
 import io.github.bensku.skripty.simple.literal.StringParser;
+import io.github.bensku.skripty.simple.scope.ScopeIf;
 
 /**
  * Simply parses scripts by using the lower level APIs from other components.
@@ -32,26 +34,23 @@ public class SimpleParser {
 		this.sectionParser = new SectionParser();
 		
 		LiteralParser[] literalParsers = literalParsers();
-		ExpressionParser exprParser = new ExpressionParser(literalParsers,
-				ExpressionLayer.forAnnotatedRegistry(expressions()));
+		ExpressionLayer expressions = ExpressionLayer.forAnnotatedRegistry(expressions());
+		ExpressionParser exprParser = new ExpressionParser(literalParsers, expressions);
 		
-		ScopeRegistry scopes = scopes();
-		Scope rootScope = new Scope(new ExpressionParser(literalParsers,
-				ExpressionLayer.forAnnotatedRegistry(scopes.getExpressions())), scopes,
-				exprParser);
-		this.blockParser = new BlockParser(rootScope);
+		ExpressionRegistry scopeExprs = new ExpressionRegistry();
+		Expression scopeIf = scopeExprs.makeCallable(SimpleTypes.class, new ScopeIf());
+		
+		ScopeRegistry scopes = new ScopeRegistry(scopeExprs);		
+		Scope defaultScope = new Scope(new ExpressionParser(literalParsers, expressions,
+				ExpressionLayer.forAnnotatedRegistry(scopeExprs)), scopes, exprParser);
+		
+		scopes.register(scopeIf, defaultScope);
+		
+		this.blockParser = new BlockParser(defaultScope);
 	}
 	
 	private LiteralParser[] literalParsers() {
 		return new LiteralParser[] {new StringParser()};
-	}
-	
-	private ScopeRegistry scopes() {
-		ExpressionRegistry exprs = new ExpressionRegistry();
-		
-		ScopeRegistry scopes = new ScopeRegistry(exprs);
-		
-		return scopes;
 	}
 	
 	private ExpressionRegistry expressions() {

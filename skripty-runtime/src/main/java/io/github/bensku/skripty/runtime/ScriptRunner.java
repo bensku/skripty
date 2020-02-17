@@ -51,10 +51,12 @@ public class ScriptRunner {
 				stack.push(handle.invokeWithArguments(args));
 			} else if (node instanceof IrNode.Jump) {
 				Object expected = ((IrNode.Jump) node).getConstant();
-				if (expected != stack.peek()) { // Jump to somewhere
+				if (expected == stack.peek()) { // Jump to somewhere
 					i = ((IrNode.Jump) node).getTarget();
 					break; // Override control flow
 				}
+			} else if (node instanceof IrNode.Pop) {
+				stack.pop();
 			}
 			
 			i++; // Next node
