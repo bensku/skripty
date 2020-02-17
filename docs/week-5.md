@@ -26,4 +26,4 @@ consists of mostly native methods that I cannot replace myself. I had not
 considered this a problem because they are much lower-level compared to
 reflection API. I realize that this might be mistaken assumption, but it is
 practically impossible to implement Skripty's design of multiple call targets
-without using method handles, unless extensive bytecode generation is needed.
+without using method handles.
