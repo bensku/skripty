@@ -16,6 +16,7 @@ import io.github.bensku.skripty.simple.expr.ExprEquals;
 import io.github.bensku.skripty.simple.expr.ExprPrint;
 import io.github.bensku.skripty.simple.expr.ExprRunnerState;
 import io.github.bensku.skripty.simple.expr.ExprTime;
+import io.github.bensku.skripty.simple.literal.StringParser;
 
 /**
  * Simply parses scripts by using the lower level APIs from other components.
@@ -42,7 +43,7 @@ public class SimpleParser {
 	}
 	
 	private LiteralParser[] literalParsers() {
-		return new LiteralParser[] {};
+		return new LiteralParser[] {new StringParser()};
 	}
 	
 	private ScopeRegistry scopes() {
@@ -55,7 +56,7 @@ public class SimpleParser {
 	
 	private ExpressionRegistry expressions() {
 		ExpressionRegistry exprs = new ExpressionRegistry();
-		Class<?> types = SimpleTypeSystem.class;
+		Class<?> types = SimpleTypes.class;
 		exprs.makeCallable(types, new ExprCrash());
 		exprs.makeCallable(types, new ExprEquals());
 		exprs.makeCallable(types, new ExprPrint());
