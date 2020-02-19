@@ -7,6 +7,7 @@ import io.github.bensku.skripty.core.expression.ExpressionRegistry;
 import io.github.bensku.skripty.parser.expression.ExpressionLayer;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
 import io.github.bensku.skripty.parser.expression.LiteralParser;
+import io.github.bensku.skripty.parser.log.ParseResult;
 import io.github.bensku.skripty.parser.script.BlockParser;
 import io.github.bensku.skripty.parser.script.Scope;
 import io.github.bensku.skripty.parser.script.ScopeRegistry;
@@ -68,9 +69,9 @@ public class SimpleParser {
 	/**
 	 * Parses a script.
 	 * @param script Script source code.
-	 * @return A script block that has been parsed and can be compiled.
+	 * @return A script block or error messages.
 	 */
-	public ScriptBlock parse(String script) {
+	public ParseResult<ScriptBlock> parse(String script) {
 		SourceNode.Section section = sectionParser.parse(script);
 		return blockParser.parse(section);
 	}

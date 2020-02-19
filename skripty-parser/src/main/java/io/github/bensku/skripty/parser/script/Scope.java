@@ -1,12 +1,13 @@
 package io.github.bensku.skripty.parser.script;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
+import io.github.bensku.skripty.parser.log.ParseResult;
+import io.github.bensku.skripty.parser.log.ParserMessage;
 
 /**
  * Scopes are types of sections/blocks found in scripts.
@@ -35,7 +36,12 @@ public class Scope {
 		this.statementParser = statementParser;
 	}
 	
-	public static class ParseResult {
+	/**
+	 * Represents an inner scope. Returned by {@link Scope#parseScope(String)}
+	 * when parsing succeeds.
+	 *
+	 */
+	public static class InnerScope {
 		
 		/**
 		 * Node of title expression of the inner scope.
@@ -47,7 +53,7 @@ public class Scope {
 		 */
 		private final Scope scope;
 
-		private ParseResult(AstNode.Expr title, Scope scope) {
+		private InnerScope(AstNode.Expr title, Scope scope) {
 			this.title = title;
 			this.scope = scope;
 		}
@@ -62,27 +68,33 @@ public class Scope {
 		
 	}
 	
-	public ParseResult parseScope(String title) {
-		ExpressionParser.Result[] results = scopeParser.parse(title.getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
+	public ParseResult<InnerScope> parseScope(SourceNode.Statement title) {
+		ExpressionParser.Result[] results = scopeParser.parse(title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
 		if (results.length == 0) {
-			// TODO error handling :)
+			ParserMessage error = ParserMessage.error("failed to parse scope").at(title, 0, title.length());
+			return ParseResult.failure(error);
 		}
 		AstNode node = results[0].getNode();
-		return new ParseResult((AstNode.Expr) results[0].getNode(), scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
+		InnerScope scope = new InnerScope((AstNode.Expr) results[0].getNode(),
+				scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
+		return ParseResult.success(scope);
 	}
 	
-	public AstNode.Expr parseStatement(String statement) {
-		byte[] bytes = statement.getBytes(StandardCharsets.UTF_8);
+	public ParseResult<AstNode.Expr> parseStatement(SourceNode.Statement statement) {
+		byte[] bytes = statement.getText().getBytes(StandardCharsets.UTF_8);
 		ExpressionParser.Result[] results = statementParser.parse(bytes, 0, SkriptType.VOID);
 		if (results.length == 0) {
-			// TODO error handling :)
+			ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
+			return ParseResult.failure(error);
 		}
 		for (ExpressionParser.Result result : results) {
 			if (result.getEnd() == bytes.length) {
-				return (AstNode.Expr) result.getNode();
+				return ParseResult.success((AstNode.Expr) result.getNode());
 			}
 		}
-		// TODO error handling :)
-		throw new AssertionError();
+		
+		// TODO more detailed error
+		ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
+		return ParseResult.failure(error);
 	}
 }

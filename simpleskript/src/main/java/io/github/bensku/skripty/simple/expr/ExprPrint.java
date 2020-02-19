@@ -19,13 +19,13 @@ public class ExprPrint {
 	}
 	
 	@CallTarget
-	public void printNumber(long l) {
-		System.out.println(l);
+	public void printTime(@Type("timestamp") long millis) {
+		System.out.println(Instant.ofEpochMilli(millis));
 	}
 	
 	@CallTarget
-	public void printTime(@Type("timestamp") long millis) {
-		System.out.println(Instant.ofEpochMilli(millis));
+	public void printNumber(long l) {
+		System.out.println(l);
 	}
 	
 	@CallTarget

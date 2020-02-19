@@ -41,7 +41,7 @@ public interface SourceNode {
 		/**
 		 * First line of this section. May be null, e.g. for root nodes.
 		 */
-		private final String title;
+		private final Statement title;
 		
 		/**
 		 * Sub-nodes of this section node.
@@ -53,13 +53,13 @@ public interface SourceNode {
 		 */
 		private final int length;
 		
-		public Section(String title, SourceNode[] nodes, int length) {
+		public Section(Statement title, SourceNode[] nodes, int length) {
 			this.title = title;
 			this.nodes = nodes;
 			this.length = length;
 		}
 		
-		public String getTitle() {
+		public Statement getTitle() {
 			return title;
 		}
 		

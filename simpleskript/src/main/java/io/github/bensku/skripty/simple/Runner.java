@@ -4,6 +4,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
+import io.github.bensku.skripty.core.ScriptBlock;
+import io.github.bensku.skripty.parser.log.ParseResult;
 import io.github.bensku.skripty.runtime.ScriptRunner;
 import io.github.bensku.skripty.runtime.ir.IrCompiler;
 
@@ -25,7 +27,12 @@ public class Runner {
 				while (true) {
 					System.out.print("> ");
 					String line = scan.nextLine();
-					runner.run(compiler.compile(parser.parse(line)));
+					ParseResult<ScriptBlock> block = parser.parse(line);
+					if (block.isSuccess()) {
+						runner.run(compiler.compile(block.getResult()));
+					} else {
+						System.err.println("Can't parse that");
+					}
 				}
 			}
 		}
@@ -35,7 +42,12 @@ public class Runner {
 			// Bubble up IOException and any throwables that might be thrown by expressions
 			// TODO reconsider this, it is a pretty bad practise
 			String content = Files.readString(Paths.get(name));
-			runner.run(compiler.compile(parser.parse(content)));
+			ParseResult<ScriptBlock> block = parser.parse(content);
+			if (block.isSuccess()) {
+				runner.run(compiler.compile(block.getResult()));
+			} else {
+				System.err.println("Failed to parse the script contents");
+			}
 		}
 	}
 }

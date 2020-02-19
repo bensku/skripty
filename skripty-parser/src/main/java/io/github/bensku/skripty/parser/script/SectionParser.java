@@ -16,7 +16,7 @@ public class SectionParser {
 		return parse(source, 0, null);
 	}
 	
-	private SourceNode.Section parse(String source, int startIndex, String title) {
+	private SourceNode.Section parse(String source, int startIndex, SourceNode.Statement title) {
 		int sectionIndent = -1;
 		
 		SourceNode[] nodes = new SourceNode[SECTION_NODE_SIZE];
@@ -76,7 +76,7 @@ public class SectionParser {
 			String line = source.substring(nodeStart, nodeEnd);
 			SourceNode node;
 			if (line.endsWith(":")) { // New section
-				node = parse(source, end, line.substring(0, line.length() - 1));
+				node = parse(source, end, new SourceNode.Statement(line.substring(0, line.length() - 1)));
 				end = end + node.length() - 1; // Skip over it here
 			} else { // Statement in current section
 				node = new SourceNode.Statement(line);
