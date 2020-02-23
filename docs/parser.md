@@ -17,18 +17,25 @@
 
 ## Section parsing
 Section parser figures out boundaries of statements and blocks based on line
-breaks and indentation. As an example, let's take a look at an imaginary small
+breaks and indentation. As an example, let's take a look at a small, imaginary
 script:
 
-TODO
+```
+if "foo" is "foo":
+    if "bar" is "bar":
+        print "Strings are equals!"
+```
 
 Time complexity of the section parser is O(n), nothing really surprising here.
 
 ## Block parsing, scopes
 Once a script has went through the section parser, we can start parsing
-expressions. In different contexts, valid expressions may be different:
+expressions. In different contexts, different expressions may be available:
 
-TODO
+```
+if "foo" is "foo":
+    print "Strings are equals!"
+```
 
 The title expression here is a condition that determines whether the block
 should be entered. It returns values of a special type (ScopeEntry#TYPE)

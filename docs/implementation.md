@@ -30,4 +30,4 @@ It is not very fast, but probably more than good enough for a scripting
 language. Writing a compiler with JVM bytecode as a target would
 significantly improve performance, but is not trivial to implement.
 
-For (much) more details, see runtime.md (WIP, coming soon).
+For more details, see runtime.md.
