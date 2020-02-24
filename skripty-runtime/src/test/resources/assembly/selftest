@@ -1,0 +1,5 @@
+Pop
+LoadLiteral foo bar
+CallPlain io.github.bensku.skripty.runtime.test.InterpreterStubs nothing void
+CallWithState io.github.bensku.skripty.runtime.test.InterpreterStubs withState void io.github.bensku.skripty.core.RunnerState
+Jump YES -2

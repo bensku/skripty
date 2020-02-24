@@ -45,8 +45,9 @@ public class IrAssembler {
 	 */
 	public IrNode parseNode(String line) {
 		line = line.stripLeading();
-		String type = line.substring(0, line.indexOf(' '));
-		String content = line.substring(type.length() + 1);
+		int typeEnd = line.indexOf(' ');
+		String type = line.substring(0, typeEnd != -1 ? typeEnd : line.length());
+		String content = line.substring(type.length() + (typeEnd != -1 ? 1 : 0));
 		switch (type) {
 		case "Pop":
 			return IrNode.Pop.INSTANCE;
@@ -57,13 +58,13 @@ public class IrAssembler {
 		case "CallPlain":
 			try {
 				return new IrNode.CallPlain(parseMethodHandle(content), false);
-			} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+			} catch (Throwable e) {
 				throw new IllegalArgumentException("parsing call failed", e);
 			}
 		case "CallWithState":
 			try {
 				return new IrNode.CallWithState(parseMethodHandle(content), false);
-			} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException e) {
+			} catch (Throwable e) {
 				throw new IllegalArgumentException("parsing call failed", e);
 			}
 		case "Jump":
@@ -82,16 +83,21 @@ public class IrAssembler {
 		return value;
 	}
 	
-	private MethodHandle parseMethodHandle(String text) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException {
+	private MethodHandle parseMethodHandle(String text) throws Throwable {
+		MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+		
 		String[] parts = text.split(" ");
 		Class<?> owner = parseClassName(parts[0]);
+		Object instance = lookup.findConstructor(owner, MethodType.methodType(void.class)).invoke();
 		String name = parts[1];
 		Class<?> returnType = parseClassName(parts[2]);
 		Class<?>[] paramTypes = new Class[parts.length - 3];
 		for (int i = 0; i < paramTypes.length; i++) {
 			paramTypes[i] = parseClassName(parts[i + 3]);
 		}
-		return MethodHandles.publicLookup().findVirtual(owner, name, MethodType.methodType(returnType, paramTypes));
+		MethodHandle handle = MethodHandles.publicLookup()
+				.findVirtual(owner, name, MethodType.methodType(returnType, paramTypes));
+		return handle.bindTo(instance);
 	}
 	
 	private Class<?> parseClassName(String name) throws ClassNotFoundException {
