@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.runtime.ir.IrBlock;
 import io.github.bensku.skripty.runtime.ir.IrNode;
+import io.github.bensku.skripty.runtime.ir.Opcodes;
 
 /**
  * Executes {@link IrBlock IR blocks}.
@@ -30,35 +31,48 @@ public class ScriptRunner {
 
 	public void run(IrBlock block) throws Throwable {
 		IrNode[] nodes = block.nodeArray(); //  Zero-copy, but might have nulls at end
+		int[] opcodes = block.opcodeArray(); // Zero-copy, zeroes at end
 		RunnerState state = stateSupplier.get();
 		ScriptStack stack = new ScriptStack(stackSize);
 		
 		// Execute all nodes
 		for (int i = 0; i < block.size();) {
+			int opcode = opcodes[i];
 			IrNode node = nodes[i];
-			if (node instanceof IrNode.LoadConstant) {
+			
+			// Select what to execute based on opcode
+			// Should compile to tableswitch bytecode, which is O(1)
+			switch (opcode) {
+			case Opcodes.POP:
+				stack.pop();
+				break;
+			case Opcodes.LOAD_LITERAL:
+				stack.push(((IrNode.LoadLiteral) node).getValue());
+				break;
+			case Opcodes.LOAD_CONSTANT:
 				stack.push(((IrNode.LoadConstant) node).getValue());
-			} else if (node instanceof IrNode.CallPlain) {
+				break;
+			case Opcodes.CALL_PLAIN:
 				MethodHandle handle = ((IrNode.CallPlain) node).getHandle();
 				int argCount = handle.type().parameterCount();
 				stack.push(handle.invokeWithArguments(stack.pop(argCount)));
-			} else if (node instanceof IrNode.CallInjectState) {
-				MethodHandle handle = ((IrNode.CallInjectState) node).getHandle();
-				int argCount = handle.type().parameterCount();
+				break;
+			case Opcodes.CALL_WITH_STATE:
+				handle = ((IrNode.CallWithState) node).getHandle();
+				argCount = handle.type().parameterCount();
 				Object[] args = new Object[argCount];
 				args[0] = state; // Inject runner state
 				stack.popInto(args, 1, argCount - 1); // Pop other arguments from stack
 				stack.push(handle.invokeWithArguments(args));
-			} else if (node instanceof IrNode.Jump) {
+				break;
+			case Opcodes.JUMP:
 				Object expected = ((IrNode.Jump) node).getConstant();
 				if (expected == stack.peek()) { // Jump to somewhere
 					i = ((IrNode.Jump) node).getTarget();
-					break; // Override control flow
+					continue; // Override control flow
 				}
-			} else if (node instanceof IrNode.Pop) {
-				stack.pop();
+				break;
 			}
-			
 			i++; // Next node
 		}
 	}

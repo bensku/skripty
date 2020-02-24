@@ -14,7 +14,7 @@ public class BlockTest {
 	@Test
 	public void blockOps() {
 		IrBlock block = new IrBlock();
-		IrNode node = new IrNode.Pop();
+		IrNode node = IrNode.Pop.INSTANCE;
 		block.append(node);
 		assertEquals(1, block.size());
 		assertEquals(1, block.skip());

@@ -1,5 +1,7 @@
 package io.github.bensku.skripty.runtime.ir;
 
+import io.github.bensku.skripty.runtime.ScriptRunner;
+
 /**
  * Represents a block of {@link IrNode IR nodes}.
  *
@@ -7,11 +9,16 @@ package io.github.bensku.skripty.runtime.ir;
 public class IrBlock {
 	
 	private static final int INITIAL_NODE_COUNT = 64;
-
+	
 	/**
 	 * The IR nodes in this block.
 	 */
 	private IrNode[] nodes;
+
+	/**
+	 * Cached opcodes for the {@link ScriptRunner interpreter}.
+	 */
+	private int[] opcodes;
 	
 	/**
 	 * Amount of nodes.
@@ -19,6 +26,7 @@ public class IrBlock {
 	private int nodeCount;
 
 	public IrBlock() {
+		this.opcodes = new int[INITIAL_NODE_COUNT];
 		this.nodes = new IrNode[INITIAL_NODE_COUNT];
 	}
 	
@@ -46,6 +54,10 @@ public class IrBlock {
 	public int skip() {
 		int slot = nodeCount++;
 		if (slot == nodes.length) { // Enlarge array
+			int[] newOpcodes = new int[opcodes.length * 2];
+			System.arraycopy(opcodes, 0, newOpcodes, 0, opcodes.length);
+			opcodes = newOpcodes;
+			
 			IrNode[] newNodes = new IrNode[nodes.length * 2];
 			System.arraycopy(nodes, 0, newNodes, 0, nodes.length);
 			nodes = newNodes;
@@ -63,6 +75,7 @@ public class IrBlock {
 			throw new IllegalArgumentException("only existing nodes or skipped slots can be set");
 		}
 		nodes[index] = node;
+		opcodes[index] = node.getOpcode();
 	}
 	
 	public IrNode[] getNodes() {
@@ -73,5 +86,9 @@ public class IrBlock {
 	
 	public IrNode[] nodeArray() {
 		return nodes;
+	}
+	
+	public int[] opcodeArray() {
+		return opcodes;
 	}
 }

@@ -56,7 +56,7 @@ public class IrCompiler {
 			// Add the initial check to space we reserved at start (NO -> skip this block)
 			block.set(jumpAfterNode, new IrNode.Jump(ScopeEntry.NO, block.size()));
 			// We end there after executing block or jump there
-			block.append(new IrNode.Pop()); // In any case, the ScopeEntry goes away
+			block.append(IrNode.Pop.INSTANCE); // In any case, the ScopeEntry goes away
 		}
 	}
 	
@@ -93,7 +93,7 @@ public class IrCompiler {
 			}
 			if (input instanceof AstNode.Literal) { // Literal -> constant
 				Object constant = ((AstNode.Literal) input).getValue();
-				block.append(new IrNode.LoadConstant(constant));
+				block.append(new IrNode.LoadLiteral(constant));
 				inputClasses[i] = constant.getClass();
 			} else { // Handle expressions recursively
 				inputClasses[i] = emitNode(block, (AstNode.Expr) input);
@@ -116,7 +116,7 @@ public class IrCompiler {
 		if (expr instanceof ConstantExpression) { // Constant expression -> constant
 			// Do not allocate unnecessary vararg array
 			Object constant = expr.call((Object[]) null);
-			block.append(new IrNode.LoadConstant(constant));
+			block.append(new IrNode.LoadLiteral(constant));
 			return constant.getClass();
 		} else { // Resolve call target, emit call to it
 			CallableExpression callable = (CallableExpression) expr;
@@ -147,7 +147,7 @@ public class IrCompiler {
 	private void emitMethod(IrBlock block, Object instance, MethodHandle handle, boolean exact, boolean injectState) {
 		handle = handle.bindTo(instance);
 		if (injectState) {
-			block.append(new IrNode.CallInjectState(handle, exact));
+			block.append(new IrNode.CallWithState(handle, exact));
 		} else {
 			block.append(new IrNode.CallPlain(handle, exact));
 		}

@@ -4,42 +4,96 @@ import java.lang.invoke.MethodHandle;
 
 import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.ScriptBlock;
+import io.github.bensku.skripty.core.expression.ConstantExpression;
 
 /**
  * IR node is a single operation in flat, stack-based representation of a
  * {@link ScriptBlock script block}.
  *
  */
-public class IrNode {
+public abstract class IrNode {
 
 	private IrNode() {}
 	
 	/**
-	 * Loads a constant value to stack.
+	 * Gets {@link Opcodes opcode} of node type of this node.
+	 * @return Opcode.
+	 */
+	public abstract int getOpcode();
+	
+	/**
+	 * Pop a value from the stack.
 	 *
 	 */
-	public static class LoadConstant extends IrNode {
+	public static class Pop extends IrNode {
+	
+		public static final Pop INSTANCE = new Pop();
+		
+		private Pop() {} // Singleton
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.POP;
+		}
+	}
+	
+	/**
+	 * Loads a literal value to the stack.
+	 *
+	 */
+	public static class LoadLiteral extends IrNode {
 		
 		/**
-		 * Constant value to load to stack.
+		 * Literal value to load to stack.
 		 */
 		private final Object value;
 
-		public LoadConstant(Object value) {
+		public LoadLiteral(Object value) {
 			this.value = value;
 		}
 
 		public Object getValue() {
 			return value;
 		}
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.LOAD_LITERAL;
+		}
 		
+	}
+	
+	/**
+	 * Loads value of a constant expression to the stack.
+	 *
+	 */
+	public static class LoadConstant extends IrNode {
+		
+		/**
+		 * The constant expression.
+		 */
+		private final ConstantExpression expr;
+		
+		public LoadConstant(ConstantExpression expr) {
+			this.expr = expr;
+		}
+		
+		public Object getValue() {
+			// ConstantExpression doesn't need args, so don't allocate an array
+			return expr.call((Object[]) null);
+		}
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.LOAD_CONSTANT;
+		}
 	}
 	
 	/**
 	 * Superclass of different method call nodes.
 	 *
 	 */
-	public static class CallMethod extends IrNode {
+	public static abstract class CallMethod extends IrNode {
 		
 		/**
 		 * Handle of method that we're going to invoke.
@@ -74,6 +128,11 @@ public class IrNode {
 		CallPlain(MethodHandle handle, boolean isExact) {
 			super(handle, isExact);
 		}
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.CALL_PLAIN;
+		}
 		
 	}
 	
@@ -82,10 +141,15 @@ public class IrNode {
 	 * parameter.
 	 *
 	 */
-	public static class CallInjectState extends CallMethod {
+	public static class CallWithState extends CallMethod {
 
-		CallInjectState(MethodHandle handle, boolean isExact) {
+		CallWithState(MethodHandle handle, boolean isExact) {
 			super(handle, isExact);
+		}
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.CALL_WITH_STATE;
 		}
 		
 	}
@@ -120,14 +184,12 @@ public class IrNode {
 		public int getTarget() {
 			return target;
 		}
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.JUMP;
+		}
 		
 	}
-	
-	/**
-	 * Pop a value from the stack.
-	 *
-	 */
-	public static class Pop extends IrNode {
-		
-	}
+
 }
