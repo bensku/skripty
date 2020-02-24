@@ -1,7 +1,6 @@
 package io.github.bensku.skripty.parser.expression;
 
 import io.github.bensku.skripty.core.AstNode;
-import io.github.bensku.skripty.core.SkriptType;
 
 /**
  * Literal parsers are used for syntaxes that cannot be parsed as expressions.

@@ -105,7 +105,7 @@ public abstract class IrNode {
 		 */
 		private final boolean exact;
 		
-		CallMethod(MethodHandle handle, boolean isExact) {
+		private CallMethod(MethodHandle handle, boolean isExact) {
 			this.handle = handle;
 			this.exact = isExact;
 		}
@@ -125,7 +125,7 @@ public abstract class IrNode {
 	 */
 	public static class CallPlain extends CallMethod {
 
-		CallPlain(MethodHandle handle, boolean isExact) {
+		public CallPlain(MethodHandle handle, boolean isExact) {
 			super(handle, isExact);
 		}
 
@@ -143,7 +143,7 @@ public abstract class IrNode {
 	 */
 	public static class CallWithState extends CallMethod {
 
-		CallWithState(MethodHandle handle, boolean isExact) {
+		public CallWithState(MethodHandle handle, boolean isExact) {
 			super(handle, isExact);
 		}
 

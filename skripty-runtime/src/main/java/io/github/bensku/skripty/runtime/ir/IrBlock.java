@@ -26,8 +26,19 @@ public class IrBlock {
 	private int nodeCount;
 
 	public IrBlock() {
-		this.opcodes = new int[INITIAL_NODE_COUNT];
 		this.nodes = new IrNode[INITIAL_NODE_COUNT];
+		this.opcodes = new int[INITIAL_NODE_COUNT];
+	}
+	
+	public IrBlock(IrNode[] nodes) {
+		this.nodes = nodes;
+		this.opcodes = new int[nodes.length];
+		this.nodeCount = nodes.length;
+		
+		// Fill opcodes array
+		for (int i = 0; i < nodes.length; i++) {
+			opcodes[i] = nodes[i].getOpcode();
+		}
 	}
 	
 	/**

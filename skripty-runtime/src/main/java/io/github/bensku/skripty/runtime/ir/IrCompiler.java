@@ -115,9 +115,9 @@ public class IrCompiler {
 	private Class<?> emitExpression(IrBlock block, Expression expr, SkriptType[] inputTypes, Class<?>[] inputClasses) {
 		if (expr instanceof ConstantExpression) { // Constant expression -> constant
 			// Do not allocate unnecessary vararg array
-			Object constant = expr.call((Object[]) null);
-			block.append(new IrNode.LoadLiteral(constant));
-			return constant.getClass();
+			block.append(new IrNode.LoadConstant((ConstantExpression) expr));
+			// Constant "calls" are cheap, do one just to get the type
+			return expr.call((Object[]) null).getClass();
 		} else { // Resolve call target, emit call to it
 			CallableExpression callable = (CallableExpression) expr;
 			CallTarget target = callable.findTarget(inputTypes, inputClasses, true);
