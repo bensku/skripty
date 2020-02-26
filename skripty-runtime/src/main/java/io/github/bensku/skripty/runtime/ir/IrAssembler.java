@@ -83,6 +83,8 @@ public class IrAssembler {
 		return value;
 	}
 	
+	private static final int PARAMS_OFFSET = 3;
+	
 	private MethodHandle parseMethodHandle(String text) throws Throwable {
 		MethodHandles.Lookup lookup = MethodHandles.publicLookup();
 		
@@ -91,9 +93,9 @@ public class IrAssembler {
 		Object instance = lookup.findConstructor(owner, MethodType.methodType(void.class)).invoke();
 		String name = parts[1];
 		Class<?> returnType = parseClassName(parts[2]);
-		Class<?>[] paramTypes = new Class[parts.length - 3];
+		Class<?>[] paramTypes = new Class[parts.length - PARAMS_OFFSET];
 		for (int i = 0; i < paramTypes.length; i++) {
-			paramTypes[i] = parseClassName(parts[i + 3]);
+			paramTypes[i] = parseClassName(parts[i + PARAMS_OFFSET]);
 		}
 		MethodHandle handle = MethodHandles.publicLookup()
 				.findVirtual(owner, name, MethodType.methodType(returnType, paramTypes));

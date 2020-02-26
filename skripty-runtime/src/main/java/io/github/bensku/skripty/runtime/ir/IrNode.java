@@ -93,7 +93,7 @@ public abstract class IrNode {
 	 * Superclass of different method call nodes.
 	 *
 	 */
-	public static abstract class CallMethod extends IrNode {
+	public abstract static class CallMethod extends IrNode {
 		
 		/**
 		 * Handle of method that we're going to invoke.
