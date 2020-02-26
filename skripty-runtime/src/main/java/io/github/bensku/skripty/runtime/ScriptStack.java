@@ -21,6 +21,14 @@ public class ScriptStack {
 	}
 	
 	/**
+	 * Gets current size of the stack.
+	 * @return Current stack size.
+	 */
+	public int size() {
+		return size;
+	}
+	
+	/**
 	 * Pushes a value to this stack.
 	 * @param value Value to push.
 	 */

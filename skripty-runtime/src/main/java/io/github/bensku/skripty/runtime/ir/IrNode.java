@@ -151,7 +151,6 @@ public abstract class IrNode {
 		public int getOpcode() {
 			return Opcodes.CALL_WITH_STATE;
 		}
-		
 	}
 	
 	/**
@@ -189,7 +188,25 @@ public abstract class IrNode {
 		public int getOpcode() {
 			return Opcodes.JUMP;
 		}
+	}
+	
+	/**
+	 * Cease execution and return the top value of the stack to caller of the
+	 * script block. If the stack is empty, return null if possible.
+	 * TODO this node can't yet be emitted by compiler, need to think how to
+	 * implement that
+	 *
+	 */
+	public static class Return extends IrNode {
 		
+		public static final Return INSTANCE = new Return();
+		
+		private Return() {} // Singleton
+
+		@Override
+		public int getOpcode() {
+			return Opcodes.RETURN;
+		}
 	}
 
 }

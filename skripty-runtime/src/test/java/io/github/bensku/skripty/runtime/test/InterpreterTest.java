@@ -29,6 +29,14 @@ public class InterpreterTest {
 		}
 	}
 	
+	private Object runAssembly(String name) {
+		try {
+			return runner.run(loadAssembly(name), null);
+		} catch (Throwable e) {
+			throw new AssertionError(e);
+		}
+	}
+	
 	@Test
 	public void assemblerCheck() {
 		// Check that the assembler correctly parses things
@@ -41,5 +49,10 @@ public class InterpreterTest {
 		IrNode.Jump jump = (IrNode.Jump) nodes[4];
 		assertEquals(ScopeEntry.YES, jump.getConstant());
 		assertEquals(-2, jump.getTarget());
+	}
+	
+	@Test
+	public void simpleReturn() {
+		assertEquals("test text", runAssembly("return"));
 	}
 }

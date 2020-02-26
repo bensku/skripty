@@ -1,8 +1,6 @@
 package io.github.bensku.skripty.runtime;
 
 import java.lang.invoke.MethodHandle;
-import java.util.function.Supplier;
-
 import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.runtime.ir.IrBlock;
 import io.github.bensku.skripty.runtime.ir.IrNode;
@@ -23,7 +21,7 @@ public class ScriptRunner<T extends RunnerState> {
 		this.stackSize = stackSize;
 	}
 
-	public void run(IrBlock block, T state) throws Throwable {
+	public Object run(IrBlock block, T state) throws Throwable {
 		IrNode[] nodes = block.nodeArray(); //  Zero-copy, but might have nulls at end
 		int[] opcodes = block.opcodeArray(); // Zero-copy, zeroes at end
 		ScriptStack stack = new ScriptStack(stackSize);
@@ -65,8 +63,16 @@ public class ScriptRunner<T extends RunnerState> {
 					continue; // Override control flow
 				}
 				break;
+			case Opcodes.RETURN:
+				if (stack.size() == 0) {
+					return null;
+				} else {
+					return stack.pop();
+				}
 			}
 			i++; // Next node
 		}
+		
+		return null; // No explicit return
 	}
 }

@@ -70,6 +70,8 @@ public class IrAssembler {
 		case "Jump":
 			String[] args = content.split(" ");
 			return new IrNode.Jump(parseScopeEntry(args[0]), Integer.parseInt(args[1]));
+		case "Return":
+			return IrNode.Return.INSTANCE;
 		default:
 			throw new IllegalArgumentException("unknown instruction: " + type);
 		}

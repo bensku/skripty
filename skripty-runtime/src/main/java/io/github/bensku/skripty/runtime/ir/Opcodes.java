@@ -37,4 +37,9 @@ public class Opcodes {
 	 * {@link IrNode.Jump}
 	 */
 	public static final int JUMP = 5;
+	
+	/**
+	 * {@link IrNode.Return}
+	 */
+	public static final int RETURN = 6;
 }
