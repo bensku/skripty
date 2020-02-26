@@ -1,0 +1,8 @@
+LoadLiteral NO
+CallPlain io.github.bensku.skripty.runtime.test.InterpreterStubs enterScope io.github.bensku.skripty.core.flow.ScopeEntry java.lang.String
+Jump NO 5
+LoadLiteral wrong return
+Return
+Pop
+LoadLiteral correct return
+Return

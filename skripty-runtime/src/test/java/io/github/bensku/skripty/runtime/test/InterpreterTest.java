@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.runtime.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +53,23 @@ public class InterpreterTest {
 	}
 	
 	@Test
+	public void empty() throws Throwable {
+		assertNull(runner.run(new IrBlock(), null));
+	}
+	
+	@Test
 	public void simpleReturn() {
-		assertEquals("test text", runAssembly("return"));
+		assertEquals("test text", runAssembly("return1"));
+		assertNull(runAssembly("return2"));
+	}
+	
+	@Test
+	public void simpleCall() {
+		assertEquals("alphabetagamma", runAssembly("call"));
+	}
+	
+	@Test
+	public void condition() {
+		assertEquals("correct return", runAssembly("condition"));
 	}
 }
