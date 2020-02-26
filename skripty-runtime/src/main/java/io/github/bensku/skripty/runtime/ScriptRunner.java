@@ -12,27 +12,20 @@ import io.github.bensku.skripty.runtime.ir.Opcodes;
  * Executes {@link IrBlock IR blocks}.
  *
  */
-public class ScriptRunner {
-
-	/**
-	 * When new blocks are run, this provides states for them.
-	 */
-	private final Supplier<RunnerState> stateSupplier;
+public class ScriptRunner<T extends RunnerState> {
 	
 	/**
 	 * Stack size of blocks.
 	 */
 	private final int stackSize;
 	
-	public ScriptRunner(Supplier<RunnerState> stateSupplier, int stackSize) {
-		this.stateSupplier = stateSupplier;
+	public ScriptRunner(int stackSize) {
 		this.stackSize = stackSize;
 	}
 
-	public void run(IrBlock block) throws Throwable {
+	public void run(IrBlock block, T state) throws Throwable {
 		IrNode[] nodes = block.nodeArray(); //  Zero-copy, but might have nulls at end
 		int[] opcodes = block.opcodeArray(); // Zero-copy, zeroes at end
-		RunnerState state = stateSupplier.get();
 		ScriptStack stack = new ScriptStack(stackSize);
 		
 		// Execute all nodes

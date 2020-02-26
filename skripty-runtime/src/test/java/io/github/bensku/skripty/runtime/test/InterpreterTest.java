@@ -8,7 +8,9 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
+import io.github.bensku.skripty.runtime.ScriptRunner;
 import io.github.bensku.skripty.runtime.ir.IrAssembler;
 import io.github.bensku.skripty.runtime.ir.IrBlock;
 import io.github.bensku.skripty.runtime.ir.IrNode;
@@ -16,6 +18,7 @@ import io.github.bensku.skripty.runtime.ir.IrNode;
 public class InterpreterTest {
 
 	private IrAssembler assembler = new IrAssembler(text -> text);
+	private ScriptRunner<RunnerState> runner = new ScriptRunner<>(64);
 	
 	private IrBlock loadAssembly(String name) {
 		try {

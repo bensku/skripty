@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
+import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.parser.log.ParseResult;
 import io.github.bensku.skripty.runtime.ScriptRunner;
@@ -20,7 +21,7 @@ public class Runner {
 		SimpleParser parser = new SimpleParser();
 		IrCompiler compiler = new IrCompiler();
 		// We're not using script state for anything, but might do so in future
-		ScriptRunner runner = new ScriptRunner(() -> null, SCRIPT_STACK_SIZE);
+		ScriptRunner<RunnerState> runner = new ScriptRunner<>(SCRIPT_STACK_SIZE);
 		
 		if (args.length == 0) { // Launch a simple REPL
 			try (Scanner scan = new Scanner(System.in)) {
@@ -29,7 +30,7 @@ public class Runner {
 					String line = scan.nextLine();
 					ParseResult<ScriptBlock> block = parser.parse(line);
 					if (block.isSuccess()) {
-						runner.run(compiler.compile(block.getResult()));
+						runner.run(compiler.compile(block.getResult()), null);
 					} else {
 						System.err.println("Can't parse that");
 					}
@@ -44,7 +45,7 @@ public class Runner {
 			String content = Files.readString(Paths.get(name));
 			ParseResult<ScriptBlock> block = parser.parse(content);
 			if (block.isSuccess()) {
-				runner.run(compiler.compile(block.getResult()));
+				runner.run(compiler.compile(block.getResult()), null);
 			} else {
 				System.err.println("Failed to parse the script contents");
 			}
