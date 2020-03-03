@@ -37,5 +37,5 @@ public interface LiteralParser {
 
 	}
 
-	Result parse(byte[] input, int start);
+	Result parse(ParserState state, byte[] input, int start);
 }

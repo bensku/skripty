@@ -73,6 +73,6 @@ public class SimpleParser {
 	 */
 	public ParseResult<ScriptBlock> parse(String script) {
 		SourceNode.Section section = sectionParser.parse(script);
-		return blockParser.parse(section);
+		return blockParser.parse(null, section);
 	}
 }

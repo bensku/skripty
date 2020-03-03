@@ -25,6 +25,6 @@ public enum ScopeEntry {
 	 */
 	NO;
 	
-	public static SkriptType TYPE = SkriptType.create(ScopeEntry.class);
+	public static final SkriptType TYPE = SkriptType.create(ScopeEntry.class);
 
 }

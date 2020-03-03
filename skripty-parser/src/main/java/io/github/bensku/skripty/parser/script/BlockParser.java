@@ -3,6 +3,8 @@ package io.github.bensku.skripty.parser.script;
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.core.ScriptUnit;
+import io.github.bensku.skripty.parser.expression.LiteralParser;
+import io.github.bensku.skripty.parser.expression.ParserState;
 import io.github.bensku.skripty.parser.log.ParseResult;
 
 /**
@@ -23,21 +25,24 @@ public class BlockParser {
 	
 	/**
 	 * Parses a source section and all its subsections into a source block.
+	 * @param state Parser state. This eventually gets passed down to
+	 * {@link LiteralParser literal parsers}.
 	 * @param section Source section.
 	 * @return Parse result.
 	 */
-	public ParseResult<ScriptBlock> parse(SourceNode.Section section) {
-		return parse(rootScope, null, section);
+	public ParseResult<ScriptBlock> parse(ParserState state, SourceNode.Section section) {
+		return parse(state, rootScope, null, section);
 	}
 	
 	/**
 	 * Parses a source section.
+	 * @param state Parser state.
 	 * @param scope Current scope.
 	 * @param titleExpr Title of current scope. May be null.
 	 * @param section Source section.
 	 * @return Parse result.
 	 */
-	private ParseResult<ScriptBlock> parse(Scope scope, AstNode.Expr titleExpr, SourceNode.Section section) {
+	private ParseResult<ScriptBlock> parse(ParserState state, Scope scope, AstNode.Expr titleExpr, SourceNode.Section section) {
 		SourceNode[] sourceNodes = section.getNodes();
 		ScriptUnit[] units = new ScriptUnit[sourceNodes.length];
 		
@@ -46,11 +51,11 @@ public class BlockParser {
 		for (int i = 0; i < units.length; i++) {
 			SourceNode source = sourceNodes[i];
 			if (source instanceof SourceNode.Section) { // Recursively parse sub-blocks
-				ParseResult<Scope.InnerScope> subscope = scope.parseScope(((SourceNode.Section) source).getTitle());
+				ParseResult<Scope.InnerScope> subscope = scope.parseScope(state, ((SourceNode.Section) source).getTitle());
 				
 				if (subscope.isSuccess()) {
 					Scope.InnerScope innerScope = subscope.getResult();
-					ParseResult<ScriptBlock> block = parse(innerScope.getScope(), innerScope.getTitle(), (SourceNode.Section) source);
+					ParseResult<ScriptBlock> block = parse(state, innerScope.getScope(), innerScope.getTitle(), (SourceNode.Section) source);
 					if (block.isSuccess()) {
 						units[i] = block.getResult();
 					} else {
@@ -61,7 +66,7 @@ public class BlockParser {
 				}
 			} else { // Parse statements using current scope
 				assert source instanceof SourceNode.Statement;
-				ParseResult<AstNode.Expr> statement = scope.parseStatement((SourceNode.Statement) source);
+				ParseResult<AstNode.Expr> statement = scope.parseStatement(state, (SourceNode.Statement) source);
 				if (statement.isSuccess()) {
 					units[i] = statement.getResult();
 				} else {

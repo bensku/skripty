@@ -110,18 +110,19 @@ public class ExpressionParser {
 	
 	/**
 	 * Attempts to parse given input string.
+	 * @param state Parser state.
 	 * @param input Bytes of UTF-8 encoded input string.
 	 * @param start Where to start parsing from in the input array.
 	 * @param types Accepted return types of parsed expressions.
 	 * @return The parse results, or an empty array if parsing failed.
 	 */
-	public Result[] parse(byte[] input, int start, SkriptType... types) {
+	public Result[] parse(ParserState state, byte[] input, int start, SkriptType... types) {
 		Result[] tempResults = new Result[PARSE_MAX_RESULTS]; // TODO try to guess result count instead
 		int resultCount = 0;
 		
 		// Try literal parsing first
 		for (LiteralParser parser : literalParsers) {
-			LiteralParser.Result literal = parser.parse(input, start);
+			LiteralParser.Result literal = parser.parse(state, input, start);
 			if (literal != null) { // This is a literal!
 				Result result = new Result(literal.getNode(), literal.getEnd());
 				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
@@ -129,13 +130,13 @@ public class ExpressionParser {
 				}
 				
 				// Even though result is literal, it could be used as input to something else
-				resultCount = wrapAsFirstInput(input, tempResults, resultCount, result, types);
+				resultCount = wrapAsFirstInput(state, input, tempResults, resultCount, result, types);
 			}
 		}
 		
 		// Search expressions from each layer
 		for (ExpressionLayer layer : expressions) {
-			Result[] results = parseFirst(layer, input, start);
+			Result[] results = parseFirst(state, layer, input, start);
 			for (Result result : results) {
 				if (result == null) {
 					break; // Only nulls after this
@@ -147,7 +148,7 @@ public class ExpressionParser {
 				}
 				
 				// Try using it as first input to expressions
-				resultCount = wrapAsFirstInput(input, tempResults, resultCount, result, types);
+				resultCount = wrapAsFirstInput(state, input, tempResults, resultCount, result, types);
 			}
 		}
 		
@@ -161,6 +162,7 @@ public class ExpressionParser {
 	/**
 	 * Attempts to wrap an expression as first input to another expression.
 	 * This is done recursively as long as parsing against input succeeds.
+	 * @param state Parser state.
 	 * @param input Input string.
 	 * @param out Array where we write results.
 	 * @param resultCount Current result count.
@@ -168,9 +170,9 @@ public class ExpressionParser {
 	 * @param types Accepted return types of the resulting expressions.
 	 * @return New result count in out array.
 	 */
-	private int wrapAsFirstInput(byte[] input, Result[] out, int resultCount, Result original, SkriptType[] types) {
+	private int wrapAsFirstInput(ParserState state, byte[] input, Result[] out, int resultCount, Result original, SkriptType[] types) {
 		for (ExpressionLayer layer : expressions) {
-			Result[] secondResults = parseSecond(layer, original.getNode(), input, original.getEnd());
+			Result[] secondResults = parseSecond(state, layer, original.getNode(), input, original.getEnd());
 			for (Result result : secondResults) {
 				if (result == null) {
 					break;
@@ -182,7 +184,7 @@ public class ExpressionParser {
 				}
 				
 				// Check if that could be used as first input to something else
-				resultCount = wrapAsFirstInput(input, out, resultCount, result, types);
+				resultCount = wrapAsFirstInput(state, input, out, resultCount, result, types);
 			}
 		}
 		return resultCount;
@@ -191,13 +193,14 @@ public class ExpressionParser {
 	/**
 	 * Parses all matching expressions by using input as a key to their first
 	 * parts.
+	 * @param state Parser state.
 	 * @param layer Layer to query expressions from.
 	 * @param input Input to parse.
 	 * @param start Index of byte where to start parsing from in input.
 	 * @return Parse results, or an empty array if the input cannot be parsed
 	 * in any way.
 	 */
-	private Result[] parseFirst(ExpressionLayer layer, byte[] input, int start) {
+	private Result[] parseFirst(ParserState state, ExpressionLayer layer, byte[] input, int start) {
 		ExpressionInfo[] candidates = layer.lookupFirst(input, start);
 		Result[] results = new Result[candidates.length];
 		int resultCount = 0;
@@ -212,7 +215,7 @@ public class ExpressionParser {
 			
 			// Try to match pattern of the candidate
 			// Success or a failure, we'll return that (result or null) to caller
-			Result result = matchPattern(info, 1, input, pos);
+			Result result = matchPattern(state, info, 1, input, pos);
 			if (result != null) {
 				results[resultCount++] = result;
 			}
@@ -223,6 +226,7 @@ public class ExpressionParser {
 	/**
 	 * Parses all matching expressions by using input as a key to their second
 	 * parts. The first parts must be inputs that accept the given type.
+	 * @param state Parser state.
 	 * @param layer Layer to query expressions from.
 	 * @param firstNode First input node.
 	 * @param input Input to parse.
@@ -230,7 +234,7 @@ public class ExpressionParser {
 	 * @return Parse results, or an empty array if the input cannot be parsed
 	 * in any way.
 	 */
-	private Result[] parseSecond(ExpressionLayer layer, AstNode firstNode, byte[] input, int start) {
+	private Result[] parseSecond(ParserState state, ExpressionLayer layer, AstNode firstNode, byte[] input, int start) {
 		ExpressionInfo[] candidates = layer.lookupSecond(input, start);
 		Result[] results = new Result[candidates.length];
 		int resultCount = 0;
@@ -253,7 +257,7 @@ public class ExpressionParser {
 			
 			// Try to match pattern of the candidate
 			// Success or a failure, we'll return that (result or null) to caller
-			Result result = matchPattern(info, 2, input, pos);
+			Result result = matchPattern(state, info, 2, input, pos);
 			if (result != null) {
 				// Populate input corresponding to first pattern part
 				((AstNode.Expr) result.getNode()).getInputs()[inputSlot] = firstNode;
@@ -266,6 +270,7 @@ public class ExpressionParser {
 	
 	/**
 	 * Matches pattern of an expression against input.
+	 * @param state Parser state.
 	 * @param info Expression info. This references both the pattern and
 	 * expression.
 	 * @param firstPart Index of first pattern part that we should evaluate.
@@ -275,7 +280,7 @@ public class ExpressionParser {
 	 * @param pos Starting position in the input.
 	 * @return A parse result if the given expression matches, null otherwise.
 	 */
-	private Result matchPattern(ExpressionInfo info, int firstPart, byte[] input, int pos) {
+	private Result matchPattern(ParserState state, ExpressionInfo info, int firstPart, byte[] input, int pos) {
 		AstNode.Expr node = new AstNode.Expr(info.getExpression());
 		
 		// Initially empty array of this candidate's inputs
@@ -303,12 +308,12 @@ public class ExpressionParser {
 				
 				// Get potential inputs
 				InputType inputType = info.getExpression().getInputType(inputSlot);
-				Result[] potentialInputs = parse(input, pos, inputType.getTypes());
+				Result[] potentialInputs = parse(state, input, pos, inputType.getTypes());
 				
 				// Evaluate whether or not we can parse parts of this expression
 				// AFTER this input, should it be used
 				for (Result result : potentialInputs) {
-					Result after = matchPattern(info, i + 1, input, result.getEnd());
+					Result after = matchPattern(state, info, i + 1, input, result.getEnd());
 					if (after != null && after.getEnd() > pos) { // Doesn't conflict with this expression
 						// Copy inputs parsed recursively after current one here
 						AstNode[] afterInputs = ((AstNode.Expr) after.getNode()).getInputs();

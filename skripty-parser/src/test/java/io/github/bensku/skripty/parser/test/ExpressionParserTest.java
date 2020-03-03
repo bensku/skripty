@@ -75,7 +75,7 @@ public class ExpressionParserTest {
 	@BeforeEach
 	public void initParser() {
 		LiteralParser[] literalParsers = new LiteralParser[] {
-				(input, start) -> {
+				(state, input, start) -> {
 					byte[] wanted = "literal".getBytes(StandardCharsets.UTF_8);
 					for (int i = 0; i < wanted.length; i++) {
 						int inputIndex = start + i;
@@ -104,7 +104,7 @@ public class ExpressionParserTest {
 	
 	private void parseAll(String input, Expression expected) {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(bytes, 0, expected.getReturnType());
+		ExpressionParser.Result[] results = parser.parse(null, bytes, 0, expected.getReturnType());
 		
 		for (ExpressionParser.Result result : results) {
 			if (bytes.length == result.getEnd()) {
@@ -119,7 +119,7 @@ public class ExpressionParserTest {
 	
 	private void parseAll(String input, SkriptType type, Object literalValue) {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(bytes, 0, type);
+		ExpressionParser.Result[] results = parser.parse(null, bytes, 0, type);
 		
 		for (ExpressionParser.Result result : results) {
 			if (bytes.length == result.getEnd()) {
@@ -185,13 +185,13 @@ public class ExpressionParserTest {
 	@Test
 	public void withoutTypes() {
 		byte[] expr = "consume consume string constant".getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(expr, 0, new SkriptType[] {VOID});
+		ExpressionParser.Result[] results = parser.parse(null, expr, 0, new SkriptType[] {VOID});
 		assertEquals(0, results.length); // Should fail parsing, types are a mess
 		
 		// Patterns are matched, types are just incompatible; what about without them?
 		ExpressionParser typeless = parser.withFlags(ExpressionParser.IGNORE_TYPES);
 		assertTrue(typeless.hasFlag(ExpressionParser.IGNORE_TYPES));
-		ExpressionParser.Result[] results2 = typeless.parse(expr, 0, new SkriptType[] {VOID});
+		ExpressionParser.Result[] results2 = typeless.parse(null, expr, 0, new SkriptType[] {VOID});
 		assertEquals(exprConsume, ((AstNode.Expr) results2[0].getNode()).getExpression());
 	}
 	

@@ -6,6 +6,7 @@ import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
+import io.github.bensku.skripty.parser.expression.ParserState;
 import io.github.bensku.skripty.parser.log.ParseResult;
 import io.github.bensku.skripty.parser.log.ParserMessage;
 
@@ -68,8 +69,8 @@ public class Scope {
 		
 	}
 	
-	public ParseResult<InnerScope> parseScope(SourceNode.Statement title) {
-		ExpressionParser.Result[] results = scopeParser.parse(title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
+	public ParseResult<InnerScope> parseScope(ParserState state, SourceNode.Statement title) {
+		ExpressionParser.Result[] results = scopeParser.parse(state, title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
 		if (results.length == 0) {
 			ParserMessage error = ParserMessage.error("failed to parse scope").at(title, 0, title.length());
 			return ParseResult.failure(error);
@@ -80,9 +81,9 @@ public class Scope {
 		return ParseResult.success(scope);
 	}
 	
-	public ParseResult<AstNode.Expr> parseStatement(SourceNode.Statement statement) {
+	public ParseResult<AstNode.Expr> parseStatement(ParserState state, SourceNode.Statement statement) {
 		byte[] bytes = statement.getText().getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = statementParser.parse(bytes, 0, SkriptType.VOID);
+		ExpressionParser.Result[] results = statementParser.parse(state, bytes, 0, SkriptType.VOID);
 		if (results.length == 0) {
 			ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
 			return ParseResult.failure(error);

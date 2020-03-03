@@ -4,12 +4,13 @@ import java.nio.charset.StandardCharsets;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.parser.expression.LiteralParser;
+import io.github.bensku.skripty.parser.expression.ParserState;
 import io.github.bensku.skripty.simple.SimpleTypes;
 
 public class StringParser implements LiteralParser {
 
 	@Override
-	public Result parse(byte[] input, int start) {
+	public Result parse(ParserState state, byte[] input, int start) {
 		if (input[start] != '"') {
 			return null; // Not a string literal
 		}
