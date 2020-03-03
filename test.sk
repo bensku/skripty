@@ -1,0 +1,7 @@
+print current time
+print "foo" is "foo"
+print "foo" is "bar"
+if "foo" is "foo":
+    print "'if' works!"
+if "foo" is "bar":
+    print "'if' didn't work, oops!"

@@ -1,7 +1,8 @@
 # Skripty ![](https://github.com/bensku/skripty/workflows/Java%20CI/badge.svg) [![codecov](https://codecov.io/gh/bensku/skripty/branch/master/graph/badge.svg)](https://codecov.io/gh/bensku/skripty)
-[Definition](https://github.com/bensku/skripty/blob/master/docs/definition.md)
-[Implementation (WIP)](https://github.com/bensku/skripty/blob/master/docs/implementation.md)
-[Testing](https://github.com/bensku/skripty/blob/master/docs/testing.md)
+[Definition](docs/definition.md)
+[Implementation](docs/implementation.md)
+[Testing](docs/testing.md)
+[Usage](docs/usage.md)
 
 ## Progress Reports
 * [Week 1](https://github.com/bensku/skripty/blob/master/docs/week-1.md)
