@@ -281,11 +281,37 @@ public class CallableExpression extends Expression {
 					return false;
 				}
 			} else { // Input just needs to be convertible to requested class
-				if (!type.parameterType(i).isAssignableFrom(inputClasses[i - injectedCount])) {
+				if (!isAssignable(type.parameterType(i), inputClasses[i - injectedCount])) {
 					return false;
 				}
 			}
 		}
 		return true;
+	}
+	
+	private boolean isAssignable(Class<?> self, Class<?> from) {
+		return self.isAssignableFrom(from) || self.isAssignableFrom(unboxClass(from));
+	}
+	
+	private Class<?> unboxClass(Class<?> type) {
+		if (type.equals(Boolean.class)) {
+			return boolean.class;
+		} else if (type.equals(Byte.class)) {
+			return byte.class;
+		} else if (type.equals(Short.class)) {
+			return short.class;
+		} else if (type.equals(Character.class)) {
+			return char.class;
+		} else if (type.equals(Integer.class)) {
+			return int.class;
+		} else if (type.equals(Long.class)) {
+			return long.class;
+		} else if (type.equals(Float.class)) {
+			return float.class;
+		} else if (type.equals(Double.class)) {
+			return double.class;
+		} else {
+			return type;
+		}
 	}
 }

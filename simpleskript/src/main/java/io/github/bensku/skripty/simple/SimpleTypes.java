@@ -8,6 +8,7 @@ public class SimpleTypes {
 	public static final SkriptType VOID = SkriptType.VOID;
 	public static final SkriptType SCOPE_ENTRY = ScopeEntry.TYPE;
 	
+	public static final SkriptType VARIABLE = SkriptType.create(int.class); // int is slot index
 	public static final SkriptType BOOLEAN = SkriptType.create(boolean.class);
 	public static final SkriptType NUMBER = SkriptType.create(Number.class);
 	public static final SkriptType TEXT = SkriptType.create(String.class);

@@ -7,12 +7,18 @@ import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 import io.github.bensku.skripty.core.annotation.Type;
 import io.github.bensku.skripty.parser.annotation.Pattern;
+import io.github.bensku.skripty.simple.state.SimpleRunnerState;
 
-@Inputs({"text/timestamp/boolean"})
+@Inputs({"variable/text/timestamp/boolean"})
 @Returns("void")
 @Pattern("print {0}")
 public class ExprPrint {
 
+	@CallTarget
+	public void printVariable(SimpleRunnerState state, @Type("variable") int slot) {
+		System.out.println(state.getVariable(slot));
+	}
+	
 	@CallTarget
 	public void printString(String str) {
 		System.out.println(str);

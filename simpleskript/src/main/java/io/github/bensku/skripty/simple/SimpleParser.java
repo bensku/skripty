@@ -17,9 +17,12 @@ import io.github.bensku.skripty.simple.expr.ExprCrash;
 import io.github.bensku.skripty.simple.expr.ExprEquals;
 import io.github.bensku.skripty.simple.expr.ExprPrint;
 import io.github.bensku.skripty.simple.expr.ExprRunnerState;
+import io.github.bensku.skripty.simple.expr.ExprSetVariable;
 import io.github.bensku.skripty.simple.expr.ExprTime;
 import io.github.bensku.skripty.simple.literal.StringParser;
+import io.github.bensku.skripty.simple.literal.VariableParser;
 import io.github.bensku.skripty.simple.scope.ScopeIf;
+import io.github.bensku.skripty.simple.state.SimpleParserState;
 
 /**
  * Simply parses scripts by using the lower level APIs from other components.
@@ -51,7 +54,7 @@ public class SimpleParser {
 	}
 	
 	private LiteralParser[] literalParsers() {
-		return new LiteralParser[] {new StringParser()};
+		return new LiteralParser[] {new StringParser(), new VariableParser()};
 	}
 	
 	private ExpressionRegistry expressions() {
@@ -61,6 +64,7 @@ public class SimpleParser {
 		exprs.makeCallable(types, new ExprEquals());
 		exprs.makeCallable(types, new ExprPrint());
 		exprs.makeCallable(types, new ExprRunnerState());
+		exprs.makeCallable(types, new ExprSetVariable());
 		exprs.makeCallable(types, new ExprTime());
 		
 		return exprs;
@@ -73,6 +77,6 @@ public class SimpleParser {
 	 */
 	public ParseResult<ScriptBlock> parse(String script) {
 		SourceNode.Section section = sectionParser.parse(script);
-		return blockParser.parse(null, section);
+		return blockParser.parse(new SimpleParserState(), section);
 	}
 }

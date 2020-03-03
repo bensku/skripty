@@ -9,6 +9,7 @@ import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.parser.log.ParseResult;
 import io.github.bensku.skripty.runtime.ScriptRunner;
 import io.github.bensku.skripty.runtime.ir.IrCompiler;
+import io.github.bensku.skripty.simple.state.SimpleRunnerState;
 
 public class Runner {
 	
@@ -28,9 +29,9 @@ public class Runner {
 				while (true) {
 					System.out.print("> ");
 					String line = scan.nextLine();
-					ParseResult<ScriptBlock> block = parser.parse(line);
-					if (block.isSuccess()) {
-						runner.run(compiler.compile(block.getResult()), null);
+					ParseResult<ScriptBlock> result = parser.parse(line);
+					if (result.isSuccess()) {
+						runner.run(compiler.compile(result.getResult()), null);
 					} else {
 						System.err.println("Can't parse that");
 					}
@@ -45,7 +46,7 @@ public class Runner {
 			String content = Files.readString(Paths.get(name));
 			ParseResult<ScriptBlock> block = parser.parse(content);
 			if (block.isSuccess()) {
-				runner.run(compiler.compile(block.getResult()), null);
+				runner.run(compiler.compile(block.getResult()), new SimpleRunnerState());
 			} else {
 				System.err.println("Failed to parse the script contents");
 			}
