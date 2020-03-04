@@ -21,6 +21,7 @@ public class VariableParser implements LiteralParser {
 			if (input[i] == '}') {
 				end = i;
 				name = new String(input, start + 1, end - start - 1, StandardCharsets.UTF_8);
+				break;
 			}
 		}
 		if (name == null) {

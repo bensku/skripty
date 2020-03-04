@@ -8,3 +8,9 @@ if "foo" is "bar":
 
 set {x} to "a variable"
 print {x}
+
+set {y} to "another variable"
+if {x} is {y}:
+    print "shouldn't appear"
+set {x} to {y}
+print {x}
