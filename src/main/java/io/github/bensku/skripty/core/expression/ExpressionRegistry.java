@@ -2,16 +2,16 @@ package io.github.bensku.skripty.core.expression;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.function.Consumer;
 
 import io.github.bensku.skripty.core.RunnerState;
-import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 import io.github.bensku.skripty.core.annotation.Type;
+import io.github.bensku.skripty.core.type.SkriptType;
+import io.github.bensku.skripty.core.type.TypeSystem;
 
 /**
  * A registry for expressions.
@@ -53,14 +53,13 @@ public class ExpressionRegistry {
 	
 	/**
 	 * Makes a callable expression from based on annotations of given class.
-	 * @param typeSystem Class that has types available to scripts as
-	 * constants.
+	 * @param typeSystem Type system with which type names should be resolved.
 	 * @param impl Implementation class.
 	 * @return A callable expression.
 	 * @throws IllegalArgumentException If required annotations are missing, or
 	 * their values are incorrect.
 	 */
-	public CallableExpression makeCallable(Class<?> typeSystem, Object instance) {
+	public CallableExpression makeCallable(TypeSystem typeSystem, Object instance) {
 		Class<?> impl = instance.getClass();
 		
 		// Input types
@@ -82,7 +81,7 @@ public class ExpressionRegistry {
 			String[] options = slotDesc.split("/");
 			SkriptType[] types = new SkriptType[options.length];
 			for (int j = 0; j < types.length; j++) {
-				types[j] = resolveType(typeSystem, options[j]);
+				types[j] = typeSystem.resolve(options[j]);
 			}
 			inputs[i] = new InputType(optional, types);
 		}
@@ -92,7 +91,7 @@ public class ExpressionRegistry {
 		if (returnsAnn == null) {
 			throw new IllegalArgumentException("impl lacks @Returns");
 		}
-		SkriptType returnType = resolveType(typeSystem, returnsAnn.value());
+		SkriptType returnType = typeSystem.resolve(returnsAnn.value());
 		
 		// All potential call targets
 		Method[] methods = impl.getDeclaredMethods();
@@ -112,7 +111,7 @@ public class ExpressionRegistry {
 					for (int j = 0; j < inputTypes.length; j++) {
 						Type type = params[j + injectedCount].getAnnotation(Type.class);
 						if (type != null) { // That parameter wants to limit accepted SkriptTypes
-							inputTypes[j] = resolveType(typeSystem, type.value());
+							inputTypes[j] = typeSystem.resolve(type.value());
 						}
 					}
 					
@@ -130,21 +129,6 @@ public class ExpressionRegistry {
 				.returnType(returnType)
 				.callTargets(targets)
 				.create();
-	}
-	
-	private SkriptType resolveType(Class<?> typeSystem, String name) {
-		// Search for field with name from "type system" class
-		Field field;
-		try {
-			field = typeSystem.getField(name.toUpperCase());
-		} catch (NoSuchFieldException | SecurityException e) {
-			throw new IllegalArgumentException("cannot resolve type '" + name, e);
-		}
-		try {
-			return (SkriptType) field.get(null);
-		} catch (ClassCastException | IllegalArgumentException | IllegalAccessException e) {
-			throw new IllegalArgumentException("cannot access type '" + name, e);
-		}
 	}
 	
 	/**

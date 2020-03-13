@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * Used to indicate {@link SkriptType type} of a parameter of call target.

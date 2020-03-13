@@ -1,12 +1,8 @@
 package io.github.bensku.skripty.simple;
 
-import io.github.bensku.skripty.core.SkriptType;
-import io.github.bensku.skripty.core.flow.ScopeEntry;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 public class SimpleTypes {
-
-	public static final SkriptType VOID = SkriptType.VOID;
-	public static final SkriptType SCOPE_ENTRY = ScopeEntry.TYPE;
 	
 	public static final SkriptType VARIABLE = SkriptType.create(int.class); // int is slot index
 	public static final SkriptType BOOLEAN = SkriptType.create(boolean.class);

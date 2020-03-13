@@ -8,13 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.annotation.CallTarget;
 import io.github.bensku.skripty.core.annotation.Inputs;
 import io.github.bensku.skripty.core.annotation.Returns;
 import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.ConstantExpression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
+import io.github.bensku.skripty.core.type.SkriptType;
+import io.github.bensku.skripty.core.type.TypeSystem;
 import io.github.bensku.skripty.parser.expression.ExpressionLayer;
 import io.github.bensku.skripty.parser.pattern.Pattern;
 
@@ -32,7 +33,6 @@ public class ExpressionLayerTest {
 	}
 	
 	// Two different types backed by same Java class
-	public static final SkriptType VOID = SkriptType.VOID;
 	public static final SkriptType BAR = SkriptType.create(String.class);
 	
 	@Inputs({})
@@ -48,7 +48,9 @@ public class ExpressionLayerTest {
 	
 	@Test
 	public void annotatedLayer() {
-		CallableExpression fooExpr = registry.makeCallable(getClass(), new TestExpr());
+		TypeSystem types = new TypeSystem();
+		types.registerTypes(getClass());
+		CallableExpression fooExpr = registry.makeCallable(types, new TestExpr());
 		ExpressionLayer layer = ExpressionLayer.forAnnotatedRegistry(registry);
 		assertEquals(fooExpr, layer.lookupFirst("foo".getBytes(StandardCharsets.UTF_8), 0)[0].getExpression());
 	}

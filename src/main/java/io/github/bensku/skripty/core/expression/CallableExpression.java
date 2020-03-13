@@ -2,7 +2,8 @@ package io.github.bensku.skripty.core.expression;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import io.github.bensku.skripty.core.SkriptType;
+
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * An expression that is not a {@link Literal}.

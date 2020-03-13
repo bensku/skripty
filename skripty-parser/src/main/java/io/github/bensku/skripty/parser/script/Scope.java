@@ -3,8 +3,8 @@ package io.github.bensku.skripty.parser.script;
 import java.nio.charset.StandardCharsets;
 
 import io.github.bensku.skripty.core.AstNode;
-import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
+import io.github.bensku.skripty.core.type.SkriptType;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
 import io.github.bensku.skripty.parser.expression.ParserState;
 import io.github.bensku.skripty.parser.log.ParseResult;

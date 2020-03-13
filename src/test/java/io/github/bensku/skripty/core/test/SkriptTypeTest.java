@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 public class SkriptTypeTest {
 

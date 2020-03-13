@@ -11,10 +11,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.github.bensku.skripty.core.AstNode;
-import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
 import io.github.bensku.skripty.core.expression.InputType;
+import io.github.bensku.skripty.core.type.SkriptType;
 import io.github.bensku.skripty.parser.expression.ExpressionLayer;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
 import io.github.bensku.skripty.parser.expression.LiteralParser;

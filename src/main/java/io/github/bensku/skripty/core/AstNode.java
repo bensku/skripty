@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.core;
 
 import io.github.bensku.skripty.core.expression.Expression;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * An abstract syntax tree node that represents a single expression.

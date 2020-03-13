@@ -4,6 +4,7 @@ package io.github.bensku.skripty.simple;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.expression.ExpressionRegistry;
+import io.github.bensku.skripty.core.type.TypeSystem;
 import io.github.bensku.skripty.parser.expression.ExpressionLayer;
 import io.github.bensku.skripty.parser.expression.ExpressionParser;
 import io.github.bensku.skripty.parser.expression.LiteralParser;
@@ -37,12 +38,16 @@ public class SimpleParser {
 	public SimpleParser() {
 		this.sectionParser = new SectionParser();
 		
+		// Set up our type system
+		TypeSystem types = new TypeSystem();
+		types.registerTypes(SimpleTypes.class);
+		
 		LiteralParser[] literalParsers = literalParsers();
-		ExpressionLayer expressions = ExpressionLayer.forAnnotatedRegistry(expressions());
+		ExpressionLayer expressions = ExpressionLayer.forAnnotatedRegistry(expressions(types));
 		ExpressionParser exprParser = new ExpressionParser(literalParsers, expressions);
 		
 		ExpressionRegistry scopeExprs = new ExpressionRegistry();
-		Expression scopeIf = scopeExprs.makeCallable(SimpleTypes.class, new ScopeIf());
+		Expression scopeIf = scopeExprs.makeCallable(types, new ScopeIf());
 		
 		ScopeRegistry scopes = new ScopeRegistry(scopeExprs);		
 		Scope defaultScope = new Scope(new ExpressionParser(literalParsers, expressions,
@@ -57,9 +62,8 @@ public class SimpleParser {
 		return new LiteralParser[] {new StringParser(), new VariableParser()};
 	}
 	
-	private ExpressionRegistry expressions() {
+	private ExpressionRegistry expressions(TypeSystem types) {
 		ExpressionRegistry exprs = new ExpressionRegistry();
-		Class<?> types = SimpleTypes.class;
 		exprs.makeCallable(types, new ExprCrash());
 		exprs.makeCallable(types, new ExprEquals());
 		exprs.makeCallable(types, new ExprPrint());

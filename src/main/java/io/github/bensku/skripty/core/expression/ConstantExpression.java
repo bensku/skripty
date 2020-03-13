@@ -1,6 +1,6 @@
 package io.github.bensku.skripty.core.expression;
 
-import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * An expression with a constant value.

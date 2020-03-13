@@ -1,6 +1,6 @@
 package io.github.bensku.skripty.core.flow;
 
-import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * Returned by expressions that implement scopes to indicate when the scopes

@@ -2,7 +2,7 @@ package io.github.bensku.skripty.core.expression;
 
 import java.lang.invoke.MethodHandle;
 
-import io.github.bensku.skripty.core.SkriptType;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * Represents a potential call target of a

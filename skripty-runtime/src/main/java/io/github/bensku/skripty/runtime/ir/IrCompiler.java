@@ -6,12 +6,12 @@ import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.RunnerState;
 import io.github.bensku.skripty.core.ScriptBlock;
 import io.github.bensku.skripty.core.ScriptUnit;
-import io.github.bensku.skripty.core.SkriptType;
 import io.github.bensku.skripty.core.expression.CallTarget;
 import io.github.bensku.skripty.core.expression.CallableExpression;
 import io.github.bensku.skripty.core.expression.ConstantExpression;
 import io.github.bensku.skripty.core.expression.Expression;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
+import io.github.bensku.skripty.core.type.SkriptType;
 
 /**
  * Compiles scripts into a flat, intermediate format that can be interpreted
