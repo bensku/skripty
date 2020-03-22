@@ -24,6 +24,7 @@ public class TypeSystemTest {
 		SkriptType foo = SkriptType.create("foo.bar.Baz");
 		types.registerType("foo", foo);
 		assertEquals(foo, types.resolve("foo"));
+		assertEquals(foo.listOf(), types.parse("list<foo>"));
 	}
 	
 	public static class TestTypes {
@@ -43,11 +44,13 @@ public class TypeSystemTest {
 		TypeSystem types = new TypeSystem();
 		types.registerTypes(TestTypes.class);
 		
-		assertEquals(TestTypes.FIRST, types.resolve("first"));
+		assertEquals(TestTypes.FIRST, types.parse("first"));
+		assertEquals(TestTypes.FIRST.listOf(), types.parse("list<first>"));
 		assertEquals(TestTypes.SECOND, types.resolve("second"));
 		assertEquals(TestTypes.THIRD, types.resolve("third"));
 		
 		assertThrows(IllegalArgumentException.class, () -> types.resolve("fourth"));
 		assertThrows(IllegalArgumentException.class, () -> types.resolve("fifth"));
+		assertThrows(IllegalArgumentException.class, () -> types.parse("foobar<first>"));
 	}
 }

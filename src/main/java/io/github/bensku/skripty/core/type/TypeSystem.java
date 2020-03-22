@@ -31,12 +31,42 @@ public class TypeSystem {
 		registerType("scope_entry", ScopeEntry.TYPE);
 	}
 	
+	/**
+	 * Resolves a type from this system.
+	 * @param id Id of the type.
+	 * @return Type associated with the given id.
+	 * @throws IllegalArgumentException When no type could be found with the given id.
+	 */
 	public SkriptType resolve(String id) {
 		SkriptType type = types.get(id);
 		if (type == null) {
 			throw new IllegalArgumentException("type not found with id " + id);
 		}
 		return type;
+	}
+
+	/**
+	 * Parses given text to a type from this system. Supports list types.
+	 * @param text Textual form of type to parse.
+	 * @return A type.
+	 * @throws IllegalArgumentException When parsing failed or no type could be
+	 * found.
+	 */
+	public SkriptType parse(String text) {
+		int idStart = text.indexOf('<');
+		if (idStart == -1) {
+			return resolve(text);
+		}
+		int idEnd = text.indexOf('>', idStart);
+		String operator = text.substring(0, idStart);
+		String id = text.substring(idStart + 1, idEnd);
+		SkriptType baseType = resolve(id);
+		
+		if (operator.equals("list")) {
+			return baseType.listOf();
+		} else {
+			throw new IllegalArgumentException("parsing type failed: " + text);
+		}
 	}
 	
 	/**

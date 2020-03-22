@@ -81,7 +81,7 @@ public class ExpressionRegistry {
 			String[] options = slotDesc.split("/");
 			SkriptType[] types = new SkriptType[options.length];
 			for (int j = 0; j < types.length; j++) {
-				types[j] = typeSystem.resolve(options[j]);
+				types[j] = typeSystem.parse(options[j]);
 			}
 			inputs[i] = new InputType(optional, types);
 		}

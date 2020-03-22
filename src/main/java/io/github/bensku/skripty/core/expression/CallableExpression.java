@@ -92,7 +92,7 @@ public class CallableExpression extends Expression {
 					for (SkriptType option : input.getTypes()) {
 						try {
 							// Must be implemented by JVM type that we can actually take
-							if (checkCompatible(option.materialize().getBackingClass(), paramClass)) {
+							if (checkCompatible(option.materialize(), paramClass)) {
 								// Must also match type filter, if one is set
 								if (filterTypes[inputIndex] == null || filterTypes[inputIndex].equals(option)) {
 									oneCompatibleType = true;
@@ -109,10 +109,10 @@ public class CallableExpression extends Expression {
 				
 				// Check the return type
 				try {
-					Class<?> expected = returnType.materialize().getBackingClass();
+					SkriptType.Concrete expected = returnType.materialize();
 					Class<?> actual = type.returnType();
 					if (!checkCompatible(expected, actual)) {
-						throw new IllegalArgumentException(expected + " is not assignable from return type " + actual);
+						throw new IllegalArgumentException(expected.getBackingClass() + " is not assignable from return type " + actual);
 					}
 				} catch (ClassNotFoundException e) {
 					throw new IllegalArgumentException("failed to materialize return type", e);
@@ -123,7 +123,16 @@ public class CallableExpression extends Expression {
 			return this;
 		}
 		
-		private boolean checkCompatible(Class<?> expected, Class<?> actual) {
+		private boolean checkCompatible(SkriptType.Concrete type, Class<?> actual) {
+			// If type is a list, given class must be, too
+			if (type.isList()) {
+				if (!actual.isArray()) {
+					return false;
+				}
+				actual = actual.getComponentType();
+			}
+			
+			Class<?> expected = type.getBackingClass();
 			if (!expected.isAssignableFrom(actual)) {
 				if (actual.isPrimitive()) { // Try if boxed type would be assignable
 					// Replace primitives with boxed types to allow e.g. j.l.Number in SkriptTypes

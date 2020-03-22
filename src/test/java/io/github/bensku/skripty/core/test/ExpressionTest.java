@@ -41,6 +41,10 @@ public class ExpressionTest {
 		return obj;
 	}
 	
+	public Object callTargetD(Object[] array) {
+		return array[1];
+	}
+	
 	@Test
 	public void findCallTarget() throws Throwable {
 		MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -52,11 +56,13 @@ public class ExpressionTest {
 		CallTarget targetC = new CallTarget(lookup.findVirtual(getClass(), "callTargetC",
 				MethodType.methodType(Object.class, RunnerState.class, Object.class)),
 				true, type);
+		CallTarget targetD = new CallTarget(lookup.findVirtual(getClass(), "callTargetD",
+				MethodType.methodType(Object.class, Object[].class)), false, type.listOf());
 		
 		CallableExpression expr = registry.makeCallable(this)
-				.inputTypes(new InputType(true, stringType, type))
+				.inputTypes(new InputType(true, stringType, type, type.listOf()))
 				.returnType(type)
-				.callTargets(targetA, targetB, targetC)
+				.callTargets(targetA, targetB, targetC, targetD)
 				.create();
 		assertEquals(1, expr.getInputTypes().length);
 		assertEquals(type, expr.getReturnType());
@@ -69,6 +75,8 @@ public class ExpressionTest {
 		Object token = new Object();
 		assertEquals(token, expr.findTarget(new SkriptType[] {type}, new Class[] {Object.class}, true)
 				.getMethod().invokeExact(this, (RunnerState) null, token));
+		assertEquals("bar", expr.findTarget(new SkriptType[] {type.listOf()}, new Class[] {Object[].class}, true)
+				.getMethod().invokeExact(this, new Object[] {"foo", "bar"}));
 		
 		// And then that calling executes them, too
 		assertEquals("hello, world", expr.call());

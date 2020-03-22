@@ -4,19 +4,35 @@ package io.github.bensku.skripty.core.type;
  * A type that is visible to scripts.
  *
  */
-public interface SkriptType {
+public abstract class SkriptType {
 	
 	/**
 	 * A type that represents nothing (Java/JVM void).
 	 */
-	SkriptType.Concrete VOID = create(void.class);
+	public static final SkriptType.Concrete VOID = create(void.class);
 	
-	static SkriptType.Virtual create(String className) {
-		return new SkriptType.Virtual(className);
+	public static SkriptType.Virtual create(String className) {
+		return new SkriptType.Virtual(className, false, null);
 	}
 	
-	static SkriptType.Concrete create(Class<?> backingClass) {
-		return new SkriptType.Concrete(backingClass);
+	public static SkriptType.Concrete create(Class<?> backingClass) {
+		return new SkriptType.Concrete(backingClass, false, null);
+	}
+	
+	/**
+	 * If this represents a list
+	 */
+	private final boolean isList;
+	
+	/**
+	 * Type used in {@link #equals(Object)} and {@link #hashCode()} for
+	 * identity.
+	 */
+	private final SkriptType identity;
+	
+	private SkriptType(boolean isList, SkriptType identity) {
+		this.isList = isList;
+		this.identity = identity != null ? identity : this;
 	}
 	
 	/**
@@ -25,27 +41,56 @@ public interface SkriptType {
 	 * @throws ClassNotFoundException When a {@link Virtual virtual} type could
 	 * not be materialized because the backing class cannot be found.
 	 */
-	SkriptType.Concrete materialize() throws ClassNotFoundException;
+	public abstract SkriptType.Concrete materialize() throws ClassNotFoundException;
+	
+	/**
+	 * Creates a type for a list with components of this type.
+	 * @return A list type.
+	 */
+	public abstract SkriptType listOf();
+	
+	/**
+	 * Checks if this type represents a list.
+	 * @return If this is a list type.
+	 */
+	public boolean isList() {
+		return isList;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof SkriptType)) {
+			return false;
+		}
+		SkriptType type = (SkriptType) o;
+		return identity == type.identity && isList == type.isList;
+	}
+	
+	@Override
+	public int hashCode() {
+		return 31 * System.identityHashCode(identity) + (isList ? 1 : 0);
+	}
 
 	/**
 	 * A type that does not necessarily have its backing {@link Class class}
 	 * available in this JVM.
 	 *
 	 */
-	class Virtual implements SkriptType {
+	public static class Virtual extends SkriptType {
 
 		/**
 		 * Name of class backing this type. Not necessarily loaded in this JVM!
 		 */
 		private final String className;
 		
-		private Virtual(String className) {
+		private Virtual(String className, boolean isList, SkriptType identity) {
+			super(isList, identity);
 			this.className = className;
 		}
 		
 		@Override
 		public Concrete materialize() throws ClassNotFoundException {
-			return new SkriptType.Concrete(parseClassName(className));
+			return new SkriptType.Concrete(parseClassName(className), isList(), this);
 		}
 		
 		private Class<?> parseClassName(String name) throws ClassNotFoundException {
@@ -70,6 +115,14 @@ public interface SkriptType {
 				return Class.forName(name);
 			}
 		}
+
+		@Override
+		public SkriptType listOf() {
+			if (isList()) {
+				throw new UnsupportedOperationException("already a list");
+			}
+			return new Virtual(className, true, this);
+		}
 		
 	}
 	
@@ -78,14 +131,15 @@ public interface SkriptType {
 	 * currently running JVM.
 	 *
 	 */
-	class Concrete implements SkriptType {
+	public static class Concrete extends SkriptType {
 
 		/**
 		 * The backing class for this type.
 		 */
 		private final Class<?> backingClass;
 		
-		private Concrete(Class<?> backingClass) {
+		private Concrete(Class<?> backingClass, boolean isList, SkriptType identity) {
+			super(isList, identity);
 			this.backingClass = backingClass;
 		}
 		
@@ -100,6 +154,14 @@ public interface SkriptType {
 		 */
 		public Class<?> getBackingClass() {
 			return backingClass;
+		}
+
+		@Override
+		public SkriptType.Concrete listOf() {
+			if (isList()) {
+				throw new UnsupportedOperationException("already a list");
+			}
+			return new Concrete(backingClass, true, this);
 		}
 		
 	}
