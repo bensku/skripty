@@ -109,7 +109,7 @@ public class ExpressionParser {
 	}
 	
 	/**
-	 * Attempts to parse given input string.
+	 * Attempts to parse values of given types at start of the input string.
 	 * @param state Parser state.
 	 * @param input Bytes of UTF-8 encoded input string.
 	 * @param start Where to start parsing from in the input array.
@@ -117,6 +117,19 @@ public class ExpressionParser {
 	 * @return The parse results, or an empty array if parsing failed.
 	 */
 	public Result[] parse(ParserState state, byte[] input, int start, SkriptType... types) {
+		// TODO parse list literals here!
+		return parseSingle(state, input, start, types);
+	}
+	
+	/**
+	 * Attempts to parse a single value at start of the input string.
+	 * @param state Parser state.
+	 * @param input Bytes of UTF-8 encoded input string.
+	 * @param start Where to start parsing from in the input array.
+	 * @param types Accepted return types of parsed expressions.
+	 * @return The parse results, or an empty array if parsing failed.
+	 */
+	private Result[] parseSingle(ParserState state, byte[] input, int start, SkriptType... types) {
 		Result[] tempResults = new Result[PARSE_MAX_RESULTS]; // TODO try to guess result count instead
 		int resultCount = 0;
 		
@@ -308,7 +321,7 @@ public class ExpressionParser {
 				
 				// Get potential inputs
 				InputType inputType = info.getExpression().getInputType(inputSlot);
-				Result[] potentialInputs = parse(state, input, pos, inputType.getTypes());
+				Result[] potentialInputs = parseSingle(state, input, pos, inputType.getTypes());
 				
 				// Evaluate whether or not we can parse parts of this expression
 				// AFTER this input, should it be used
