@@ -1,6 +1,8 @@
 package io.github.bensku.skripty.parser.expression;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.expression.InputType;
@@ -22,11 +24,6 @@ public class ExpressionParser {
 	 * messages after compiling with types has failed.
 	 */
 	public static final int IGNORE_TYPES = 1;
-	
-	/**
-	 * Temporary limit for amount of parse results. TODO do not use fixed-size arrays
-	 */
-	private static final int PARSE_MAX_RESULTS = 128;
 
 	/**
 	 * Parser flags.
@@ -114,36 +111,37 @@ public class ExpressionParser {
 	 * @param input Bytes of UTF-8 encoded input string.
 	 * @param start Where to start parsing from in the input array.
 	 * @param types Accepted return types of parsed expressions.
-	 * @return The parse results, or an empty array if parsing failed.
+	 * @return The parse results, or an empty list if parsing failed.
 	 */
-	public Result[] parse(ParserState state, byte[] input, int start, SkriptType... types) {
+	public List<Result> parse(ParserState state, byte[] input, int start, SkriptType... types) {
+		List<Result> results = new ArrayList<>();
+		
 		// TODO parse list literals here!
-		return parseSingle(state, input, start, types);
+		parseSingle(state, input, results, start, types);
+		return results;
 	}
 	
 	/**
 	 * Attempts to parse a single value at start of the input string.
 	 * @param state Parser state.
 	 * @param input Bytes of UTF-8 encoded input string.
+	 * @param out List where results should be added.
 	 * @param start Where to start parsing from in the input array.
 	 * @param types Accepted return types of parsed expressions.
-	 * @return The parse results, or an empty array if parsing failed.
+	 * @return The parse results, or an empty list if parsing failed.
 	 */
-	private Result[] parseSingle(ParserState state, byte[] input, int start, SkriptType... types) {
-		Result[] tempResults = new Result[PARSE_MAX_RESULTS]; // TODO try to guess result count instead
-		int resultCount = 0;
-		
+	private void parseSingle(ParserState state, byte[] input, List<Result> out, int start, SkriptType... types) {
 		// Try literal parsing first
 		for (LiteralParser parser : literalParsers) {
 			LiteralParser.Result literal = parser.parse(state, input, start);
 			if (literal != null) { // This is a literal!
 				Result result = new Result(literal.getNode(), literal.getEnd());
 				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
-					tempResults[resultCount++] = result;
+					out.add(result);
 				}
 				
 				// Even though result is literal, it could be used as input to something else
-				resultCount = wrapAsFirstInput(state, input, tempResults, resultCount, result, types);
+				wrapAsFirstInput(state, input, out, result, types);
 			}
 		}
 		
@@ -157,19 +155,13 @@ public class ExpressionParser {
 				
 				// Add this result if it is of correct type
 				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
-					tempResults[resultCount++] = result;
+					out.add(result);
 				}
 				
 				// Try using it as first input to expressions
-				resultCount = wrapAsFirstInput(state, input, tempResults, resultCount, result, types);
+				wrapAsFirstInput(state, input, out, result, types);
 			}
 		}
-		
-		// Ensure that the returned array has no trailing nulls
-		Result[] allResults = new Result[resultCount];
-		System.arraycopy(tempResults, 0, allResults, 0, resultCount);
-		
-		return allResults;
 	}
 	
 	/**
@@ -177,13 +169,11 @@ public class ExpressionParser {
 	 * This is done recursively as long as parsing against input succeeds.
 	 * @param state Parser state.
 	 * @param input Input string.
-	 * @param out Array where we write results.
-	 * @param resultCount Current result count.
+	 * @param out List where we write results.
 	 * @param original Original parse result with expression we'll try to wrap.
 	 * @param types Accepted return types of the resulting expressions.
-	 * @return New result count in out array.
 	 */
-	private int wrapAsFirstInput(ParserState state, byte[] input, Result[] out, int resultCount, Result original, SkriptType[] types) {
+	private void wrapAsFirstInput(ParserState state, byte[] input, List<Result> out, Result original, SkriptType[] types) {
 		for (ExpressionLayer layer : expressions) {
 			Result[] secondResults = parseSecond(state, layer, original.getNode(), input, original.getEnd());
 			for (Result result : secondResults) {
@@ -193,14 +183,13 @@ public class ExpressionParser {
 				
 				// If this is of correct type, add it to results
 				if (hasFlag(IGNORE_TYPES) || ArrayHelpers.contains(types, result.getReturnType())) {
-					out[resultCount++] = result;
+					out.add(result);
 				}
 				
 				// Check if that could be used as first input to something else
-				resultCount = wrapAsFirstInput(state, input, out, resultCount, result, types);
+				wrapAsFirstInput(state, input, out, result, types);
 			}
 		}
-		return resultCount;
 	}
 	
 	/**
@@ -321,7 +310,7 @@ public class ExpressionParser {
 				
 				// Get potential inputs
 				InputType inputType = info.getExpression().getInputType(inputSlot);
-				Result[] potentialInputs = parseSingle(state, input, pos, inputType.getTypes());
+				List<Result> potentialInputs = parse(state, input, pos, inputType.getTypes());
 				
 				// Evaluate whether or not we can parse parts of this expression
 				// AFTER this input, should it be used

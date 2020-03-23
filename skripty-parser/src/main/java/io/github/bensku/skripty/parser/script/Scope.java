@@ -1,6 +1,7 @@
 package io.github.bensku.skripty.parser.script;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import io.github.bensku.skripty.core.AstNode;
 import io.github.bensku.skripty.core.flow.ScopeEntry;
@@ -70,21 +71,21 @@ public class Scope {
 	}
 	
 	public ParseResult<InnerScope> parseScope(ParserState state, SourceNode.Statement title) {
-		ExpressionParser.Result[] results = scopeParser.parse(state, title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
-		if (results.length == 0) {
+		List<ExpressionParser.Result> results = scopeParser.parse(state, title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
+		if (results.isEmpty()) {
 			ParserMessage error = ParserMessage.error("failed to parse scope").at(title, 0, title.length());
 			return ParseResult.failure(error);
 		}
-		AstNode node = results[0].getNode();
-		InnerScope scope = new InnerScope((AstNode.Expr) results[0].getNode(),
+		AstNode node = results.get(0).getNode();
+		InnerScope scope = new InnerScope((AstNode.Expr) results.get(0).getNode(),
 				scopeRegistry.resolve(((AstNode.Expr) node).getExpression()));
 		return ParseResult.success(scope);
 	}
 	
 	public ParseResult<AstNode.Expr> parseStatement(ParserState state, SourceNode.Statement statement) {
 		byte[] bytes = statement.getText().getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = statementParser.parse(state, bytes, 0, SkriptType.VOID);
-		if (results.length == 0) {
+		List<ExpressionParser.Result> results = statementParser.parse(state, bytes, 0, SkriptType.VOID);
+		if (results.isEmpty()) {
 			ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
 			return ParseResult.failure(error);
 		}

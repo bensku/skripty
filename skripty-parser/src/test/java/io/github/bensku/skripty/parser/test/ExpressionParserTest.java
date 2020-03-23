@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,7 +105,7 @@ public class ExpressionParserTest {
 	
 	private void parseAll(String input, Expression expected) {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(null, bytes, 0, expected.getReturnType());
+		List<ExpressionParser.Result> results = parser.parse(null, bytes, 0, expected.getReturnType());
 		
 		for (ExpressionParser.Result result : results) {
 			if (bytes.length == result.getEnd()) {
@@ -119,7 +120,7 @@ public class ExpressionParserTest {
 	
 	private void parseAll(String input, SkriptType type, Object literalValue) {
 		byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(null, bytes, 0, type);
+		List<ExpressionParser.Result> results = parser.parse(null, bytes, 0, type);
 		
 		for (ExpressionParser.Result result : results) {
 			if (bytes.length == result.getEnd()) {
@@ -185,14 +186,14 @@ public class ExpressionParserTest {
 	@Test
 	public void withoutTypes() {
 		byte[] expr = "consume consume string constant".getBytes(StandardCharsets.UTF_8);
-		ExpressionParser.Result[] results = parser.parse(null, expr, 0, new SkriptType[] {VOID});
-		assertEquals(0, results.length); // Should fail parsing, types are a mess
+		List<ExpressionParser.Result> results = parser.parse(null, expr, 0, new SkriptType[] {VOID});
+		assertTrue(results.isEmpty()); // Should fail parsing, types are a mess
 		
 		// Patterns are matched, types are just incompatible; what about without them?
 		ExpressionParser typeless = parser.withFlags(ExpressionParser.IGNORE_TYPES);
 		assertTrue(typeless.hasFlag(ExpressionParser.IGNORE_TYPES));
-		ExpressionParser.Result[] results2 = typeless.parse(null, expr, 0, new SkriptType[] {VOID});
-		assertEquals(exprConsume, ((AstNode.Expr) results2[0].getNode()).getExpression());
+		List<ExpressionParser.Result> results2 = typeless.parse(null, expr, 0, new SkriptType[] {VOID});
+		assertEquals(exprConsume, ((AstNode.Expr) results2.get(0).getNode()).getExpression());
 	}
 	
 	@Test
