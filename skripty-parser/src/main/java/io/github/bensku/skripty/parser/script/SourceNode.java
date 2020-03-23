@@ -36,6 +36,39 @@ public interface SourceNode {
 		}
 	}
 	
+	class Option implements SourceNode {
+		
+		/**
+		 * Key of the option.
+		 */
+		private final Statement key;
+		
+		/**
+		 * Value of the option.
+		 */
+		private final Statement value;
+		
+		public Option(Statement key, Statement value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		public Statement getKey() {
+			return key;
+		}
+
+		public Statement getValue() {
+			return value;
+		}
+
+		@Override
+		public int length() {
+			throw new UnsupportedOperationException("TODO");
+		}
+		
+		
+	}
+	
 	class Section implements SourceNode, Iterable<SourceNode> {
 		
 		/**

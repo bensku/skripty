@@ -1,5 +1,8 @@
 package io.github.bensku.skripty.parser.script;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 /**
  * Parses script source code into a tree of source nodes. No expressions are
  * parsed here.
@@ -8,92 +11,111 @@ package io.github.bensku.skripty.parser.script;
 public class SectionParser {
 	
 	/**
-	 * Estimated size of section node.
+	 * Indentation type.
+	 *
 	 */
-	private static final int SECTION_NODE_SIZE = 16;
-	
-	public SourceNode.Section parse(String source) {
-		return parse(source, 0, null);
+	private enum IndentType {
+		SPACE,
+		TAB
 	}
 	
-	private SourceNode.Section parse(String source, int startIndex, SourceNode.Statement title) {
-		int sectionIndent = -1;
+	/**
+	 * Line of source code.
+	 *
+	 */
+	private static class Line {
 		
-		SourceNode[] nodes = new SourceNode[SECTION_NODE_SIZE];
-		int nodeCount = 0;
+		/**
+		 * Indentation type.
+		 */
+		public final IndentType indentType;
 		
-		// Parse source line-by-line
-		int start, end; // We need start to calculate section length
-		for (start = startIndex, end = source.indexOf('\n', start);;
-				start = end + 1, end = source.indexOf('\n', start)) {
-			if (start > source.length()) {
-				break; // Running out of source to parse
-			} else if (end == -1) {
-				end = source.length();
+		/**
+		 * How much indentation is used.
+		 */
+		public final int indentLevel;
+		
+		/**
+		 * Code part of the line, i.e. everything before the comment with
+		 * leading and trailing whitespace (including indentation) trimmed.
+		 */
+		public final String code;
+		
+		/**
+		 * Comment at end of this line. May be empty string if there is no
+		 * comment.
+		 */
+		public final String comment;
+
+		public Line(IndentType indentType, int indentLevel, String code, String comment) {
+			this.indentType = indentType;
+			this.indentLevel = indentLevel;
+			this.code = code;
+			this.comment = comment;
+		}
+	}
+	
+	private int countIndentation(String line) {
+		int type = -1;
+		for (int i = 0; i < line.length();) {
+			int c = line.codePointAt(i);
+			
+			if (c != ' ' && c != '\t') { // End of whitespace
+				return i;
+			} else if (type == -1) { // First whitespace
+				type = c;
+			} else if (c != type) { // Mixed whitespace not allowed
+				throw new IllegalArgumentException("mixed whitespace at index " + i);
 			}
 			
-			// Count indentation and leave leading whitespace out
-			int nodeStart = end - 1; // By default, expect all whitespace
-			if (nodeStart == -1) {
-				break; // Might happen with empty input
-			}
-			int indentation = 0;
-			for (int i = start; i < end;) {
-				int c = source.codePointAt(i);
-				if (!Character.isWhitespace(c)) {
-					nodeStart = i;
-					break;
-				}
-				indentation++;
-				
-				i += Character.charCount(c);
+			i += Character.charCount(c);
+		}
+		return line.length(); // Everything is whitespace
+	}
+	
+	private int findComment(String line, int start) {
+		boolean escape = false;
+		boolean textBlock = false;
+		for (int i = start; i < line.length();) {
+			int c = line.codePointAt(i);
+			
+			if (escape) { // Previous character escaped this
+				escape = false;
+			} else if (c == '\\') { // We escape the next character
+				escape = true;
+			} else if (c == '"') { // Text block start/end (not escaped)
+				textBlock = !textBlock;
+			} else if (!textBlock && c == '#') { // Comment start
+				return i;
 			}
 			
-			// Leave trailing whitespace out
-			int nodeEnd = end;
-			for (int i = nodeStart; i < end;) {
-				int c = source.codePointAt(i);
-				if (!Character.isWhitespace(c)) {
-					nodeEnd = i + 1;
-				}
-				
-				i += Character.charCount(c);
-			}
-			
-			// Filter our empty nodes
-			if (nodeStart + 1 >= nodeEnd) {
-				continue;
-			}
-			
-			if (sectionIndent == -1) { // First line of section determines correct indentation
-				// TODO disallow indentation that is less than or equal to parent's
-				sectionIndent = indentation;
-			} else if (indentation < sectionIndent) { // End section
-				break;
-			}
-			
-			// Parse this node
-			String line = source.substring(nodeStart, nodeEnd);
-			SourceNode node;
-			if (line.endsWith(":")) { // New section
-				node = parse(source, end, new SourceNode.Statement(line.substring(0, line.length() - 1)));
-				end = end + node.length() - 1; // Skip over it here
-			} else { // Statement in current section
-				node = new SourceNode.Statement(line);
-			}
-			
-			if (nodeCount == nodes.length) {
-				SourceNode[] array = new SourceNode[nodes.length + SECTION_NODE_SIZE];
-				System.arraycopy(nodes, 0, array, 0, nodes.length);
-				nodes = array;
-			}
-			nodes[nodeCount++] = node;
+			i += Character.charCount(c);
 		}
 		
-		// Return section node with no null subnodes
-		SourceNode[] results = new SourceNode[nodeCount];
-		System.arraycopy(nodes, 0, results, 0, nodeCount);
-		
-		return new SourceNode.Section(title, results, start - startIndex);
+		return line.length(); // No comment in this line
 	}
+	
+	/**
+	 * Splits given source text into lines.
+	 * @param source Source text.
+	 * @return A stream of source {@link Line lines}.
+	 */
+	private Stream<Line> split(String source) {
+		return source.lines().map(line -> {
+			// Figure out indentation
+			int indentLevel = countIndentation(line);
+			IndentType indentType = IndentType.SPACE;
+			if (indentLevel > 0 && line.codePointAt(0) == '\t') {
+				indentType = IndentType.TAB;
+			}
+			
+			// Separate code and potential comment
+			int commentStart = findComment(line, indentLevel);
+			String code = line.substring(indentLevel, commentStart).stripTrailing();
+			String comment = line.substring(commentStart);
+			
+			return new Line(indentType, indentLevel, code, comment);
+		});
+	}
+	
 }
