@@ -1,6 +1,11 @@
 package io.github.bensku.skripty.parser.script;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -9,6 +14,16 @@ import java.util.stream.Stream;
  *
  */
 public class SectionParser {
+	
+	public static class IndentationException extends RuntimeException {
+
+		private static final long serialVersionUID = 1L;
+		
+		public IndentationException(String message) {
+			super(message);
+		}
+		
+	}
 	
 	/**
 	 * Indentation type.
@@ -24,6 +39,11 @@ public class SectionParser {
 	 *
 	 */
 	private static class Line {
+		
+		/**
+		 * Line number of this line.
+		 */
+		public final int lineNumber;
 		
 		/**
 		 * Indentation type.
@@ -47,7 +67,8 @@ public class SectionParser {
 		 */
 		public final String comment;
 
-		public Line(IndentType indentType, int indentLevel, String code, String comment) {
+		public Line(int lineNumber, IndentType indentType, int indentLevel, String code, String comment) {
+			this.lineNumber = lineNumber;
 			this.indentType = indentType;
 			this.indentLevel = indentLevel;
 			this.code = code;
@@ -55,7 +76,11 @@ public class SectionParser {
 		}
 	}
 	
-	private int countIndentation(String line) {
+	private IndentType indentType(int codePoint) {
+		return codePoint == '\t' ? IndentType.TAB : IndentType.SPACE;
+	}
+	
+	private int countIndentation(String line, int lineNumber) {
 		int type = -1;
 		for (int i = 0; i < line.length();) {
 			int c = line.codePointAt(i);
@@ -65,7 +90,9 @@ public class SectionParser {
 			} else if (type == -1) { // First whitespace
 				type = c;
 			} else if (c != type) { // Mixed whitespace not allowed
-				throw new IllegalArgumentException("mixed whitespace at index " + i);
+				throw new IndentationException("line " + lineNumber + ", column " + i
+						+ ": mixed whitespace in indentation; "
+						+ "found " + indentType(c) + ", but " + indentType(type) + " is used before");
 			}
 			
 			i += Character.charCount(c);
@@ -101,21 +128,89 @@ public class SectionParser {
 	 * @return A stream of source {@link Line lines}.
 	 */
 	private Stream<Line> split(String source) {
+		AtomicInteger counter = new AtomicInteger();
 		return source.lines().map(line -> {
-			// Figure out indentation
-			int indentLevel = countIndentation(line);
-			IndentType indentType = IndentType.SPACE;
-			if (indentLevel > 0 && line.codePointAt(0) == '\t') {
-				indentType = IndentType.TAB;
+			int lineNumber = counter.incrementAndGet();
+			if (line.isEmpty()) {
+				return new Line(lineNumber, IndentType.SPACE, 0, "", "");
 			}
+			
+			// Figure out indentation
+			int indentLevel = countIndentation(line, lineNumber);
+			IndentType indentType = indentType(line.codePointAt(0));
 			
 			// Separate code and potential comment
 			int commentStart = findComment(line, indentLevel);
 			String code = line.substring(indentLevel, commentStart).stripTrailing();
 			String comment = line.substring(commentStart);
 			
-			return new Line(indentType, indentLevel, code, comment);
+			return new Line(lineNumber, indentType, indentLevel, code, comment);
 		});
+	}
+	
+	/**
+	 * Takes and parses the next line from queue. If it is title of a section,
+	 * section contents are recursively parsed.
+	 * @param lines Queue of lines.
+	 * @return A source node representing the next line.
+	 */
+	private SourceNode parseNextLine(Queue<Line> lines) {
+		Line line = lines.poll();
+		if (line.code.endsWith(":")) {
+			return parseSection(line, lines);
+		} else {
+			return new SourceNode.Statement(line.code);
+		}
+	}
+	
+	/**
+	 * Parses a section.
+	 * @param title Line with section title.
+	 * @param lines Queue of lines, starting immediately after section title.
+	 * @return A source node representing the section.
+	 */
+	private SourceNode.Section parseSection(Line title, Queue<Line> lines) {
+		List<SourceNode> nodes = new ArrayList<>();
+		
+		int titleLevel = title != null ? title.indentLevel : -1;
+		int expectedIndent = -1;
+		while (!lines.isEmpty()) {
+			Line next = lines.peek();
+			
+			if (next.indentLevel <= titleLevel) { // End of this section, and maybe even parent sections
+				break;
+			} else if (title != null && titleLevel != 0 && title.indentType != next.indentType) {
+				// We can't safely compare indentation levels because different whitespace are used
+				throw new IndentationException("todo message");
+			} else if (expectedIndent == -1) { // First node in this section sets indentation
+				if (next.indentLevel > titleLevel) { // It must be more than title, though
+					expectedIndent = next.indentLevel;
+				} else { // Section has no nodes, which is not allowed
+					throw new IndentationException("todo message");
+				}
+			} else if (next.indentLevel != expectedIndent) { // Wrong indentation level
+				throw new IndentationException("todo message");
+			}
+			
+			// Looks like nothing is wrong with this line (see above for what could go wrong)
+			nodes.add(parseNextLine(lines));
+		}
+		
+		SourceNode.Statement titleNode = null;
+		if (title != null) {
+			titleNode = new SourceNode.Statement(title.code.substring(title.code.length() - 2));
+		}
+		return new SourceNode.Section(titleNode, nodes.toArray(new SourceNode[0]));
+	}
+	
+	/**
+	 * Parses a blob of source code into a section node.
+	 * @param source Source code.
+	 * @return Section node.
+	 */
+	public SourceNode.Section parse(String source) {
+		Stream<Line> lines = split(source).filter(line -> !line.code.isEmpty());
+		return parseSection(null, lines.collect(Collectors.toCollection(ArrayDeque::new)));
 	}
 	
 }

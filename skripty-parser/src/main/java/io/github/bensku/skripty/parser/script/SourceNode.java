@@ -8,13 +8,6 @@ import java.util.Iterator;
  */
 public interface SourceNode {
 	
-	/**
-	 * Gets full length of this in source code in characters. Whitespace is
-	 * included in this length.
-	 * @return Node length.
-	 */
-	int length();
-	
 	class Statement implements SourceNode {
 		
 		/**
@@ -29,44 +22,6 @@ public interface SourceNode {
 		public String getText() {
 			return text;
 		}
-
-		@Override
-		public int length() {
-			return text.length();
-		}
-	}
-	
-	class Option implements SourceNode {
-		
-		/**
-		 * Key of the option.
-		 */
-		private final Statement key;
-		
-		/**
-		 * Value of the option.
-		 */
-		private final Statement value;
-		
-		public Option(Statement key, Statement value) {
-			this.key = key;
-			this.value = value;
-		}
-
-		public Statement getKey() {
-			return key;
-		}
-
-		public Statement getValue() {
-			return value;
-		}
-
-		@Override
-		public int length() {
-			throw new UnsupportedOperationException("TODO");
-		}
-		
-		
 	}
 	
 	class Section implements SourceNode, Iterable<SourceNode> {
@@ -81,15 +36,9 @@ public interface SourceNode {
 		 */
 		private final SourceNode[] nodes;
 		
-		/**
-		 * Total length of this section node in characters.
-		 */
-		private final int length;
-		
-		public Section(Statement title, SourceNode[] nodes, int length) {
+		public Section(Statement title, SourceNode[] nodes) {
 			this.title = title;
 			this.nodes = nodes;
-			this.length = length;
 		}
 		
 		public Statement getTitle() {
@@ -116,11 +65,6 @@ public interface SourceNode {
 					return nodes[index++];
 				}
 			};
-		}
-
-		@Override
-		public int length() {
-			return length;
 		}
 	}
 

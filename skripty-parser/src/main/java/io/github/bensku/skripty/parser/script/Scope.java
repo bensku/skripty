@@ -73,7 +73,7 @@ public class Scope {
 	public ParseResult<InnerScope> parseScope(ParserState state, SourceNode.Statement title) {
 		List<ExpressionParser.Result> results = scopeParser.parse(state, title.getText().getBytes(StandardCharsets.UTF_8), 0, ScopeEntry.TYPE);
 		if (results.isEmpty()) {
-			ParserMessage error = ParserMessage.error("failed to parse scope").at(title, 0, title.length());
+			ParserMessage error = ParserMessage.error("failed to parse scope").at(title, 0, title.getText().length());
 			return ParseResult.failure(error);
 		}
 		AstNode node = results.get(0).getNode();
@@ -86,7 +86,7 @@ public class Scope {
 		byte[] bytes = statement.getText().getBytes(StandardCharsets.UTF_8);
 		List<ExpressionParser.Result> results = statementParser.parse(state, bytes, 0, SkriptType.VOID);
 		if (results.isEmpty()) {
-			ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
+			ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.getText().length());
 			return ParseResult.failure(error);
 		}
 		for (ExpressionParser.Result result : results) {
@@ -96,7 +96,7 @@ public class Scope {
 		}
 		
 		// TODO more detailed error
-		ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.length());
+		ParserMessage error = ParserMessage.error("failed to parse statement").at(statement, 0, statement.getText().length());
 		return ParseResult.failure(error);
 	}
 }

@@ -30,7 +30,6 @@ public class SectionParserTest {
 	public void emptySource() {
 		SourceNode.Section section = parser.parse("");
 		assertFalse(section.iterator().hasNext());
-		assertEquals(0, section.length());
 	}
 	
 	@Test
