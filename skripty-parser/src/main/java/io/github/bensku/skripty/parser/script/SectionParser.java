@@ -19,10 +19,34 @@ public class SectionParser {
 
 		private static final long serialVersionUID = 1L;
 		
-		public IndentationException(String message) {
+		private final int line;
+		
+		private final int start, end;
+		
+		public IndentationException(int line, int start, int end, String message) {
 			super(message);
+			this.line = line;
+			this.start = start;
+			this.end = end;
 		}
 		
+		public int getLine() {
+			return line;
+		}
+		
+		public int getStart() {
+			return start;
+		}
+		
+		public int getEnd() {
+			return end;
+		}
+		
+		@Override
+		public String toString() {
+			return getClass().getName() + ": line " + line
+					+ ", column " + start + "-" + (end - 1) + ": " + getMessage();
+		}
 	}
 	
 	/**
@@ -90,8 +114,7 @@ public class SectionParser {
 			} else if (type == -1) { // First whitespace
 				type = c;
 			} else if (c != type) { // Mixed whitespace not allowed
-				throw new IndentationException("line " + lineNumber + ", column " + i
-						+ ": mixed whitespace in indentation; "
+				throw new IndentationException(lineNumber, i - 1, i + 1, "mixed whitespace in indentation; "
 						+ "found " + indentType(c) + ", but " + indentType(type) + " is used before");
 			}
 			
@@ -172,24 +195,27 @@ public class SectionParser {
 	private SourceNode.Section parseSection(Line title, Queue<Line> lines) {
 		List<SourceNode> nodes = new ArrayList<>();
 		
+		// Indentation level of title; when there is no title, it is just one level lower
 		int titleLevel = title != null ? title.indentLevel : -1;
 		int expectedIndent = -1;
 		while (!lines.isEmpty()) {
 			Line next = lines.peek();
 			
-			if (next.indentLevel <= titleLevel) { // End of this section, and maybe even parent sections
-				break;
-			} else if (title != null && titleLevel != 0 && title.indentType != next.indentType) {
+			if (title != null && titleLevel != 0 && next.indentLevel != 0 && title.indentType != next.indentType) {
 				// We can't safely compare indentation levels because different whitespace are used
-				throw new IndentationException("todo message");
+				throw new IndentationException(next.lineNumber, 0, next.indentLevel,
+						"found " + next.indentType + " indentation, but section title (at line " + title.lineNumber + ")"
+						+ " uses " + title.indentType + " instead");
 			} else if (expectedIndent == -1) { // First node in this section sets indentation
 				if (next.indentLevel > titleLevel) { // It must be more than title, though
 					expectedIndent = next.indentLevel;
 				} else { // Section has no nodes, which is not allowed
-					throw new IndentationException("todo message");
+					throw new IndentationException(title.lineNumber, 0, 0, "empty sections are not allowed");
 				}
+			} else if (next.indentLevel <= titleLevel) { // End of this section, and maybe even parent sections
+				break;
 			} else if (next.indentLevel != expectedIndent) { // Wrong indentation level
-				throw new IndentationException("todo message");
+				throw new IndentationException(next.lineNumber, 0, next.indentLevel, "wrong indentation level");
 			}
 			
 			// Looks like nothing is wrong with this line (see above for what could go wrong)

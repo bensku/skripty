@@ -1,6 +1,6 @@
-first line
-second line
-
+first line # A comment
+second line # Foo, bar
+# Commenting stuff!
 third line
    
 

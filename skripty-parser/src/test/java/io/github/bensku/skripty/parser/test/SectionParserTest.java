@@ -2,6 +2,7 @@ package io.github.bensku.skripty.parser.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,6 +12,7 @@ import java.util.Iterator;
 import org.junit.jupiter.api.Test;
 
 import io.github.bensku.skripty.parser.script.SourceNode;
+import io.github.bensku.skripty.parser.script.SectionParser.IndentationException;
 import io.github.bensku.skripty.parser.script.SectionParser;
 
 public class SectionParserTest {
@@ -73,5 +75,12 @@ public class SectionParserTest {
 		assertContentEq("second-innermost second", inner.getNodes()[2]);
 		
 		assertContentEq("last statement", it.next());
+	}
+	
+	@Test
+	public void whitespaceErrors() {
+		//assertThrows(IndentationException.class, () -> parser.parse("foo:\n   \t"));
+		//assertThrows(IndentationException.class, () -> parser.parse("foo:\n\tbar:\n        baz"));
+		assertThrows(IndentationException.class, () -> parser.parse("foo:\nbar"));
 	}
 }
