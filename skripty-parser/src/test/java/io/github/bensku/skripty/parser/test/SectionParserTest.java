@@ -79,8 +79,13 @@ public class SectionParserTest {
 	
 	@Test
 	public void whitespaceErrors() {
-		//assertThrows(IndentationException.class, () -> parser.parse("foo:\n   \t"));
-		//assertThrows(IndentationException.class, () -> parser.parse("foo:\n\tbar:\n        baz"));
+		assertThrows(IndentationException.class, () -> parser.parse("foo:\n   \t"));
+		assertThrows(IndentationException.class, () -> parser.parse("foo:\n\tbar:\n        baz"));
 		assertThrows(IndentationException.class, () -> parser.parse("foo:\nbar"));
+	}
+	
+	@Test
+	public void commentAndLine() {
+		assertEquals(" A comment!", ((SourceNode.Statement) parser.parse("at root # A comment!").getNodes()[0]).getComment());
 	}
 }

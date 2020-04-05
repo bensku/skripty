@@ -11,16 +11,36 @@ public interface SourceNode {
 	class Statement implements SourceNode {
 		
 		/**
+		 * Line in source code that this statement is defined in.
+		 */
+		private final int line;
+		
+		/**
 		 * Text content of the statement.
 		 */
 		private final String text;
 		
-		public Statement(String text) {
+		/**
+		 * Comment text at end of this line.
+		 */
+		private final String comment;
+		
+		public Statement(int line, String text, String comment) {
+			this.line = line;
 			this.text = text;
+			this.comment = comment;
+		}
+		
+		public int getLine() {
+			return line;
 		}
 		
 		public String getText() {
 			return text;
+		}
+		
+		public String getComment() {
+			return comment;
 		}
 	}
 	

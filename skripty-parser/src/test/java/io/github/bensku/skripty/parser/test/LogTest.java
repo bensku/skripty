@@ -17,7 +17,7 @@ public class LogTest {
 
 	@Test
 	public void parserMessages() {
-		SourceNode node = new SourceNode.Statement("test stuff");
+		SourceNode node = new SourceNode.Statement(0, "test stuff", "");
 		
 		ParserMessage error1 = ParserMessage.msg(ParserMessage.Type.ERROR, "error 1").at(node, 0, 4);
 		assertEquals(ParserMessage.Type.ERROR, error1.getType());
@@ -46,7 +46,7 @@ public class LogTest {
 	
 	@Test
 	public void parseResults() {
-		SourceNode node = new SourceNode.Statement("A Bad End");
+		SourceNode node = new SourceNode.Statement(0, "A Bad End", "");
 		ScriptBlock block = new ScriptBlock(null, new ScriptUnit[0]);
 		ParserMessage msg = ParserMessage.warn("Turn back").at(node, 0, 4);
 		

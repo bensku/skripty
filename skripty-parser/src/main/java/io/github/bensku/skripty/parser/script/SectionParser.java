@@ -165,7 +165,7 @@ public class SectionParser {
 			// Separate code and potential comment
 			int commentStart = findComment(line, indentLevel);
 			String code = line.substring(indentLevel, commentStart).stripTrailing();
-			String comment = line.substring(commentStart);
+			String comment = commentStart != line.length() ? line.substring(commentStart + 1) : "";
 			
 			return new Line(lineNumber, indentType, indentLevel, code, comment);
 		});
@@ -182,7 +182,7 @@ public class SectionParser {
 		if (line.code.endsWith(":")) {
 			return parseSection(line, lines);
 		} else {
-			return new SourceNode.Statement(line.code);
+			return new SourceNode.Statement(line.lineNumber, line.code, line.comment);
 		}
 	}
 	
@@ -224,7 +224,7 @@ public class SectionParser {
 		
 		SourceNode.Statement titleNode = null;
 		if (title != null) {
-			titleNode = new SourceNode.Statement(title.code.substring(title.code.length() - 2));
+			titleNode = new SourceNode.Statement(title.lineNumber, title.code.substring(title.code.length() - 2), title.comment);
 		}
 		return new SourceNode.Section(titleNode, nodes.toArray(new SourceNode[0]));
 	}
