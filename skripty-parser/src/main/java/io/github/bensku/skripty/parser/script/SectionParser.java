@@ -108,7 +108,7 @@ public class SectionParser {
 		 */
 		public final String comment;
 
-		public Line(int lineNumber, IndentType indentType, int indentLevel, String code, String comment) {
+		Line(int lineNumber, IndentType indentType, int indentLevel, String code, String comment) {
 			this.lineNumber = lineNumber;
 			this.indentType = indentType;
 			this.indentLevel = indentLevel;

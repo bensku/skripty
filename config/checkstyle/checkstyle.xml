@@ -24,7 +24,9 @@
 		<module name="InvalidJavadocPosition"/>
 		<module name="JavadocBlockTagLocation"/>
 		<module name="LeftCurly"/>
-		<module name="MagicNumber"/>
+		<module name="MagicNumber">
+			<property name="ignoreHashCodeMethod" value="true"/>
+		</module>
 		<module name="ModifiedControlVariable"/>
 		<module name="ModifierOrder"/>
 		<module name="NeedBraces"/>
