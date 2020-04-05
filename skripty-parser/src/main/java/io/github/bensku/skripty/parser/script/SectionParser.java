@@ -15,6 +15,12 @@ import java.util.stream.Stream;
  */
 public class SectionParser {
 	
+	private final InputTransformer.Factory transformerFactory;
+	
+	public SectionParser(InputTransformer.Factory transformerFactory) {
+		this.transformerFactory = transformerFactory;
+	}
+	
 	public static class IndentationException extends RuntimeException {
 
 		private static final long serialVersionUID = 1L;
@@ -140,26 +146,47 @@ public class SectionParser {
 		return line.length(); // Everything is whitespace
 	}
 	
-	private int findComment(String line, int start) {
-		boolean escape = false;
-		boolean textBlock = false;
+	/**
+	 * Collected {@link InputTransformer} results of a single line.
+	 *
+	 */
+	private static class TransformResult {
+		
+		/**
+		 * Where comment starts. This is length of line if there is no comment.
+		 */
+		public final int commentStart;
+		
+		/**
+		 * Text after transformation.
+		 */
+		public final String text;
+		
+		TransformResult(int commentStart, String text) {
+			this.commentStart = commentStart;
+			this.text = text;
+		}
+	}
+	
+	private TransformResult transformInput(String line, int start) {
+		InputTransformer it = transformerFactory.make(line); // The input transformer for this line
+		StringBuilder text = new StringBuilder(line.length() - start); // Transformed text
+		
+		// Loop over code points
+		int commentStart = -1;
+		InputTransformer.State state = new InputTransformer.State();
 		for (int i = start; i < line.length();) {
 			int c = line.codePointAt(i);
 			
-			if (escape) { // Previous character escaped this
-				escape = false;
-			} else if (c == '\\') { // We escape the next character
-				escape = true;
-			} else if (c == '"') { // Text block start/end (not escaped)
-				textBlock = !textBlock;
-			} else if (!textBlock && c == '#') { // Comment start
-				return i;
+			text.append(it.next(i, c, state));
+			if (commentStart != -1 && state.commentStarted()) {
+				commentStart = i - start;
 			}
 			
 			i += Character.charCount(c);
 		}
 		
-		return line.length(); // No comment in this line
+		return new TransformResult(commentStart, text.toString());
 	}
 	
 	/**
@@ -179,10 +206,14 @@ public class SectionParser {
 			int indentLevel = countIndentation(line, lineNumber);
 			IndentType indentType = indentType(line.codePointAt(0));
 			
-			// Separate code and potential comment
-			int commentStart = findComment(line, indentLevel);
-			String code = line.substring(indentLevel, commentStart).stripTrailing();
-			String comment = commentStart != line.length() ? line.substring(commentStart + 1) : "";
+			// Transform line after indentation
+			TransformResult transform = transformInput(line, indentLevel);
+			String text = transform.text;
+			int commentStart = transform.commentStart;
+			
+			// Separate code and comment (if there is a comment)
+			String code = commentStart != -1 ? text.substring(0, commentStart) : text;
+			String comment = commentStart != -1 ? text.substring(commentStart + 1) : "";
 			
 			return new Line(lineNumber, indentType, indentLevel, code, comment);
 		});
