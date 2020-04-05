@@ -54,8 +54,25 @@ public class SectionParser {
 	 *
 	 */
 	private enum IndentType {
-		SPACE,
-		TAB
+		SPACE("space", "spaces"),
+		TAB("tab", "tabs");
+		
+		private final String singular, plural;
+		
+		IndentType(String singular, String plural) {
+			this.singular = singular;
+			this.plural = plural;
+		}
+		
+		public String format(int count) {
+			if (count == 0) {
+				return "no " + plural;
+			} else if (count == 1) {
+				return "1 " + singular;
+			} else {
+				return count + " " + plural;
+			}
+		}
 	}
 	
 	/**
@@ -204,8 +221,8 @@ public class SectionParser {
 			if (title != null && titleLevel != 0 && next.indentLevel != 0 && title.indentType != next.indentType) {
 				// We can't safely compare indentation levels because different whitespace are used
 				throw new IndentationException(next.lineNumber, 0, next.indentLevel,
-						"found " + next.indentType + " indentation, but section title (at line " + title.lineNumber + ")"
-						+ " uses " + title.indentType + " instead");
+						"section title (at line " + title.lineNumber + ") uses " + title.indentType.plural + ", "
+						+ "but found " + next.indentType.format(next.indentLevel) + " instead");
 			} else if (expectedIndent == -1) { // First node in this section sets indentation
 				if (next.indentLevel > titleLevel) { // It must be more than title, though
 					expectedIndent = next.indentLevel;
@@ -215,7 +232,9 @@ public class SectionParser {
 			} else if (next.indentLevel <= titleLevel) { // End of this section, and maybe even parent sections
 				break;
 			} else if (next.indentLevel != expectedIndent) { // Wrong indentation level
-				throw new IndentationException(next.lineNumber, 0, next.indentLevel, "wrong indentation level");
+				throw new IndentationException(next.lineNumber, 0, next.indentLevel,
+						"expected " + title.indentType.format(expectedIndent) + ", but found "
+						+ title.indentType.format(next.indentLevel) + " instead");
 			}
 			
 			// Looks like nothing is wrong with this line (see above for what could go wrong)
